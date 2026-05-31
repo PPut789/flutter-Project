@@ -1,0 +1,30 @@
+{
+  "input": "C:\\flutter\\flutter-Project\\project\\dataset\\#5 finish_attraction_enriched.xlsx",
+  "analyticsWorkbook": "C:\\flutter\\flutter-Project\\project\\dataset\\analytics\\dataset_analytics_summary.xlsx",
+  "transformWorkbook": "C:\\flutter\\flutter-Project\\project\\dataset\\analytics\\feature_transform_table.xlsx",
+  "analytics": {
+    "total_attractions": 2994,
+    "regions": 2,
+    "provinces": 31,
+    "categories": 3,
+    "types": 52,
+    "activities": 19,
+    "rows_with_images": 2885,
+    "image_coverage_percent": 96.36,
+    "rows_without_images": 109,
+    "rows_with_youtube": 50,
+    "youtube_coverage_percent": 1.67,
+    "rows_without_youtube": 2944,
+    "top_province": "เชียงใหม่",
+    "top_category": "ประวัติศาสตร์และวัฒนธรรม",
+    "top_type": "วัดและศาสนสถาน",
+    "top_activity": "ถ่ายรูป"
+  },
+  "transformFeatureCounts": {
+    "region": 2,
+    "province": 31,
+    "category": 3,
+    "type": 52,
+    "activity": 19
+  }
+}

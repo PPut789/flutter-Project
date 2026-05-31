@@ -1,0 +1,27 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "travelrecommendation-851e9",
+          "appId": "1:1051392765409:android:13d0ad863bb0bab3c4b6a0",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "travelrecommendation-851e9",
+          "configurations": {
+            "android": "1:1051392765409:android:13d0ad863bb0bab3c4b6a0",
+            "ios": "1:1051392765409:ios:61414d05924ead0ac4b6a0",
+            "web": "1:1051392765409:web:943893d03705ea45c4b6a0",
+            "windows": "1:1051392765409:web:9187d25d00ae628cc4b6a0"
+          }
+        }
+      }
+    }
+  }
+}

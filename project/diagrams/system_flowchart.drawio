@@ -1,0 +1,153 @@
+<mxfile host="app.diagrams.net" modified="2026-05-21T00:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="travelthai-system-flow" name="System Flowchart">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Personalized Tourist Attraction Recommendation System Using Artificial Intelligence" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#4A1552;align=center;" vertex="1" parent="1">
+          <mxGeometry x="250" y="30" width="1100" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="ระบบแนะนำสถานที่ท่องเที่ยวตามความสนใจส่วนบุคคลโดยใช้เทคนิคปัญญาประดิษฐ์" style="text;html=1;strokeColor=none;fillColor=none;fontSize=18;fontColor=#6A2C70;align=center;" vertex="1" parent="1">
+          <mxGeometry x="250" y="70" width="1100" height="34" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lane_app" value="Flutter Mobile Application" style="swimlane;html=1;rounded=1;startSize=34;fillColor=#F6EAF8;strokeColor=#8A1C8C;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="130" width="560" height="880" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane_rec" value="Recommendation / AI Logic" style="swimlane;html=1;rounded=1;startSize=34;fillColor=#EAF4FF;strokeColor=#2776B8;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="670" y="130" width="430" height="880" as="geometry"/>
+        </mxCell>
+        <mxCell id="lane_data" value="Data Source / Media" style="swimlane;html=1;rounded=1;startSize=34;fillColor=#EAF7EF;strokeColor=#2E8B57;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="130" width="390" height="880" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="start" value="Start App" style="ellipse;whiteSpace=wrap;html=1;fillColor=#710078;fontColor=#FFFFFF;strokeColor=#4A1552;fontStyle=1;" vertex="1" parent="lane_app">
+          <mxGeometry x="190" y="60" width="150" height="56" as="geometry"/>
+        </mxCell>
+        <mxCell id="login" value="Login / Register&lt;br&gt;(placeholder UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8A1C8C;fontSize=14;" vertex="1" parent="lane_app">
+          <mxGeometry x="150" y="150" width="230" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="location" value="Select Region / Province&lt;br&gt;ภาคเหนือ / ภาคใต้" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8A1C8C;fontSize=14;" vertex="1" parent="lane_app">
+          <mxGeometry x="150" y="260" width="230" height="74" as="geometry"/>
+        </mxCell>
+        <mxCell id="interest" value="Select Interests&lt;br&gt;Category / Type / Activity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8A1C8C;fontSize=14;" vertex="1" parent="lane_app">
+          <mxGeometry x="150" y="380" width="230" height="74" as="geometry"/>
+        </mxCell>
+        <mxCell id="home" value="Home Recommendation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8A1C8C;fontSize=14;fontStyle=1;" vertex="1" parent="lane_app">
+          <mxGeometry x="150" y="505" width="230" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="search_decision" value="User Search?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF7D6;strokeColor=#D39E00;fontSize=14;" vertex="1" parent="lane_app">
+          <mxGeometry x="178" y="615" width="174" height="92" as="geometry"/>
+        </mxCell>
+        <mxCell id="detail" value="Place Detail&lt;br&gt;Images / YouTube / Map" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8A1C8C;fontSize=14;" vertex="1" parent="lane_app">
+          <mxGeometry x="55" y="760" width="210" height="74" as="geometry"/>
+        </mxCell>
+        <mxCell id="tiktok" value="TikTok Feed&lt;br&gt;Short video + View Place" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#8A1C8C;fontSize=14;" vertex="1" parent="lane_app">
+          <mxGeometry x="305" y="760" width="210" height="74" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="prefs" value="User Preference Vector&lt;br&gt;region, province, category, type, activity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2776B8;fontSize=14;" vertex="1" parent="lane_rec">
+          <mxGeometry x="80" y="250" width="270" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="features" value="Attraction Feature Vector&lt;br&gt;one-hot / weighted features" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2776B8;fontSize=14;" vertex="1" parent="lane_rec">
+          <mxGeometry x="80" y="380" width="270" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="similarity" value="KNN-style Similarity&lt;br&gt;Cosine Similarity + Weight" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DFF0FF;strokeColor=#2776B8;fontSize=14;fontStyle=1;" vertex="1" parent="lane_rec">
+          <mxGeometry x="80" y="510" width="270" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="rank" value="Rank Top-K Attractions&lt;br&gt;highest similarity score first" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2776B8;fontSize=14;" vertex="1" parent="lane_rec">
+          <mxGeometry x="80" y="640" width="270" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="backend_note" value="Current prototype:&lt;br&gt;local JSON + Flutter filtering/scoring&lt;br&gt;&lt;br&gt;Backend prototype:&lt;br&gt;Python API can calculate KNN/cosine similarity live" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5FBFF;strokeColor=#8BBBE8;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="lane_rec">
+          <mxGeometry x="55" y="765" width="320" height="115" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="excel" value="TAT Catalog Dataset&lt;br&gt;Excel source" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2E8B57;fontSize=14;fontStyle=1;" vertex="1" parent="lane_data">
+          <mxGeometry x="80" y="80" width="230" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="clean" value="Data Cleaning / Enrichment&lt;br&gt;North + South, remove blank,&lt;br&gt;add activity/media columns" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2E8B57;fontSize=14;" vertex="1" parent="lane_data">
+          <mxGeometry x="60" y="200" width="270" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="json" value="attractions.json&lt;br&gt;local app data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DFF7E7;strokeColor=#2E8B57;fontSize=14;fontStyle=1;" vertex="1" parent="lane_data">
+          <mxGeometry x="80" y="345" width="230" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="media" value="Media URLs&lt;br&gt;IMAGE_URLS / YOUTUBE_URLS / TIKTOK_URLS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2E8B57;fontSize=14;" vertex="1" parent="lane_data">
+          <mxGeometry x="55" y="500" width="280" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="future_db" value="Future Database&lt;br&gt;Firebase Auth / Firestore / Storage" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#F5FFF8;strokeColor=#2E8B57;fontSize=14;" vertex="1" parent="lane_data">
+          <mxGeometry x="55" y="665" width="280" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="analytics" value="Data Analytics / Admin Dashboard&lt;br&gt;rows, province, category, type, activity,&lt;br&gt;media completeness" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#F5FFF8;strokeColor=#2E8B57;fontSize=14;" vertex="1" parent="lane_data">
+          <mxGeometry x="55" y="790" width="280" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e1" edge="1" parent="1" source="start" target="login" style="endArrow=block;html=1;rounded=0;strokeColor=#4A1552;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="login" target="location" style="endArrow=block;html=1;rounded=0;strokeColor=#4A1552;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="location" target="interest" style="endArrow=block;html=1;rounded=0;strokeColor=#4A1552;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="interest" target="home" style="endArrow=block;html=1;rounded=0;strokeColor=#4A1552;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="home" target="search_decision" style="endArrow=block;html=1;rounded=0;strokeColor=#4A1552;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" value="select place" edge="1" parent="1" source="search_decision" target="detail" style="endArrow=block;html=1;rounded=0;strokeColor=#4A1552;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" value="TikTok tab" edge="1" parent="1" source="home" target="tiktok" style="endArrow=block;html=1;rounded=0;strokeColor=#4A1552;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="515" y="667"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="View Place" edge="1" parent="1" source="tiktok" target="detail" style="endArrow=block;html=1;rounded=0;strokeColor=#4A1552;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e9" edge="1" parent="1" source="location" target="prefs" style="endArrow=block;html=1;dashed=1;strokeColor=#2776B8;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="interest" target="prefs" style="endArrow=block;html=1;dashed=1;strokeColor=#2776B8;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="prefs" target="similarity" style="endArrow=block;html=1;rounded=0;strokeColor=#2776B8;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="features" target="similarity" style="endArrow=block;html=1;rounded=0;strokeColor=#2776B8;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="similarity" target="rank" style="endArrow=block;html=1;rounded=0;strokeColor=#2776B8;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="rank" target="home" style="endArrow=block;html=1;dashed=1;strokeColor=#2776B8;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e15" edge="1" parent="1" source="excel" target="clean" style="endArrow=block;html=1;rounded=0;strokeColor=#2E8B57;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" source="clean" target="json" style="endArrow=block;html=1;rounded=0;strokeColor=#2E8B57;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e17" edge="1" parent="1" source="json" target="features" style="endArrow=block;html=1;dashed=1;strokeColor=#2E8B57;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e18" edge="1" parent="1" source="json" target="home" style="endArrow=block;html=1;dashed=1;strokeColor=#2E8B57;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e19" edge="1" parent="1" source="media" target="detail" style="endArrow=block;html=1;dashed=1;strokeColor=#2E8B57;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e20" edge="1" parent="1" source="media" target="tiktok" style="endArrow=block;html=1;dashed=1;strokeColor=#2E8B57;">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
