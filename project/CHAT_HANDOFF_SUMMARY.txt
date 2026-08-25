@@ -1,0 +1,241 @@
+Project handoff summary for new Codex chat
+Updated: 2026-08-10
+
+Project name:
+Personalized Tourist Attraction Recommendation System Using Artificial Intelligence
+ระบบแนะนำสถานที่ท่องเที่ยวตามความสนใจส่วนบุคคลโดยใช้เทคนิคปัญญาประดิษฐ์
+
+Workspace:
+C:\flutter\flutter-Project\project
+
+Firebase project:
+- Project name: TravelRecommendation
+- Project ID: travelrecommendation-851e9
+- Firestore location: asia-southeast1
+- Firestore collection: attractions
+- Attractions count: 2,994 documents
+- Storage bucket: travelrecommendation-851e9.firebasestorage.app
+
+Main tech stack:
+- Flutter / Dart mobile app
+- Firebase Core, Auth, Firestore, Storage
+- Cloud Firestore for attraction data, users, preferences, history, uploaded videos
+- Firebase Storage for profile images and user-uploaded videos
+- Python FastAPI backend for KNN recommendation
+- KNN model V2 exported as .pkl
+
+Important current files:
+- lib/main.dart
+- lib/firebase_options.dart
+- lib/data/place_repository.dart
+- lib/data/recommendation_repository.dart
+- lib/data/user_repository.dart
+- lib/data/history_repository.dart
+- lib/data/video_repository.dart
+- lib/models/place_model.dart
+- lib/models/recommendation_preferences.dart
+- lib/models/user_video_model.dart
+- lib/pages/start_page.dart
+- lib/pages/login_page.dart
+- lib/pages/register_page.dart
+- lib/pages/location_page.dart
+- lib/pages/interest_page.dart
+- lib/pages/home_page.dart
+- lib/pages/detail_page.dart
+- lib/pages/upload_video_page.dart
+- lib/pages/video_feed_page.dart
+- lib/pages/profile_page.dart
+- lib/pages/my_videos_page.dart
+- lib/pages/history_page.dart
+- lib/pages/settings_page.dart
+- lib/pages/about_app_page.dart
+- backend/main.py
+- backend/models/travel_recommendation_knn_model_v1.pkl
+- backend/models/travel_recommendation_knn_model_v2.pkl
+- notebooks/travel_recommendation_knn_v2_colab.ipynb
+
+Current app status:
+- Flutter app runs as a working prototype.
+- Firebase is connected and initialized.
+- App reads attraction data from Firestore, not local attractions.json.
+- assets/data/attractions.json was removed from Flutter runtime flow.
+- Login/Register uses Firebase Auth.
+- User profile data is stored in Firestore users collection.
+- User can stay logged in through Firebase auth state persistence.
+- Preferences can be saved and restored after login.
+- Home shows recommendations and search.
+- Detail page shows attraction images, tags, YouTube section, description, and Google Maps icon/action.
+- History works and avoids duplicate repeated places in display behavior.
+- Profile page has user photo, username, email, history, my videos, about app, settings, logout.
+- Profile image upload exists.
+- Video feature replaced TikTok naming with Video.
+- Bottom navbar has 5 items: Home, Preferences, + Upload, Video, Profile.
+- User can upload videos to Firebase Storage.
+- User-uploaded videos are written to Firestore and shown in shared Video feed immediately.
+- Uploaded video can be linked to one in-app attraction or to a Google Maps URL.
+- My Videos page shows the current user's videos in a 2-column TikTok-style grid.
+- Video owner can edit/delete own video from 3-dot menu.
+- Firestore and Storage security rules were added for users, attractions, videos, history, profile images, and user videos.
+
+Recent UX/UI status:
+- UI is being adjusted toward Figma design.
+- Theme target: minimal, clean, white and purple.
+- Start page should use old/default travel background, but with Figma-style tone, button shape, and rounded large pill buttons.
+- Start page placeholder logo text is "Logo".
+- App name placeholder is "AppName".
+- Start subtitle is "ค้นหาสถานที่ท่องเที่ยวตามสไตล์ของคุณ".
+- First button says "เริ่มต้น".
+- Login/Register labels changed from "Email" to "อีเมล".
+- Home header should be white/minimal:
+  - Purple bold larger text: "ยินดีต้อนรับ"
+  - Smaller normal username below
+  - Profile image/icon at top right
+  - Purple bottom divider line
+- Bottom navbar should match Figma style:
+  - Home, Preferences, +, Video, Profile
+  - Center + icon only, no text
+  - Active item purple, clean icons/text
+- Preference location page:
+  - Back arrow inside circular button
+  - Only North/South region cards for actual app logic
+  - Province chips should appear by selected region
+  - Province chips should be arranged neatly, 4 per row like Figma
+  - Region cards should be clean; no visible unselected circle. Show check only when selected.
+- Interest page:
+  - Category, Type, Activity cards should be smaller and fit better.
+  - Grid is 3 columns.
+  - Button text is "ค้นหาสถานที่ท่องเที่ยว".
+- Detail page:
+  - Top hero/image gallery and place title/map icon are mostly accepted.
+  - Keep image navigation controls.
+  - Below title should look like Figma:
+    - No decorative icon beside "เกี่ยวกับสถานที่"
+    - No bottom Google Maps button
+    - About section contains YouTube video then description text
+- Video page:
+  - Show actual place name from upload instead of "Travel video".
+  - Overlay order/details should be:
+    - place name
+    - caption
+    - location
+    - uploader username with profile image
+  - Remove sound icon.
+  - Maps/Detail icon should be smaller like Figma.
+  - 3-dot menu should be top-right only for video owner.
+- Profile page:
+  - Should match Figma profile layout closely.
+  - Top back bar and spacing should match other pages.
+  - Logout text should stay red.
+- History, My Videos, Settings, About App:
+  - Use same clean top bar/back button style.
+  - White background, purple accents, light dividers.
+
+KNN / recommendation status:
+- KNN V2 notebook exists:
+  - notebooks/travel_recommendation_knn_v2_colab.ipynb
+- KNN V2 model exists:
+  - backend/models/travel_recommendation_knn_model_v2.pkl
+- KNN V2 idea:
+  - Content-based KNN recommendation.
+  - Uses one-hot features for region, province, category, type, activity.
+  - Uses TF-IDF text features from description, highlight, tags, nameTh, nameEn.
+  - Uses NearestNeighbors(metric="cosine", algorithm="brute") and calls .fit().
+  - Exports .pkl containing model, vectorizers/encoders, matrices, metadata, config.
+  - Supports optional province by having with-province and without-province paths.
+  - Supports exclude_source_rows concept to avoid returning already seen places.
+- Important explanation:
+  - KNN is lazy learning. Training means fitting/storing feature matrix for nearest-neighbor search, not learning neural-network-like weights.
+  - The .pkl is real and usable, but evaluation is not true user-accuracy unless there is real user interaction data or expert labels.
+
+Important KNN audit findings:
+1. Multi-select mismatch:
+   - Flutter allows multiple regions/provinces/categories/types/activities.
+   - Backend currently uses only the first region/province/category/type in request in _build_user_vector.
+   - Activities are multi-value.
+   - Need fix backend so category/type/region/province multi-select really affects vector.
+2. Flutter backend connection:
+   - recommendation_repository.dart defaults to http://127.0.0.1:8000.
+   - This works for local web preview on same machine, but not real phone.
+   - For phone test use LAN IP or hosted backend.
+   - Backend README should run uvicorn with --host 0.0.0.0 for LAN testing.
+3. Same-input new results:
+   - Backend supports exclude_source_rows but Flutter does not send it yet.
+   - To avoid showing same places when user searches same preference again, Flutter should send seen sourceRows/history/session exclusions.
+4. Result size:
+   - Backend may return too many results if no limit.
+   - Consider limit/pagination/load more.
+5. Evaluation:
+   - Current Colab evaluation is based on handcrafted preference cases and relevance rules derived from same features.
+   - Good for demonstration, but not true accuracy from real user behavior.
+   - For report, describe as offline content-based relevance test, not real user satisfaction accuracy.
+
+Known logic issues to fix soon:
+1. Backend KNN multi-select support:
+   - Fix backend/main.py so all selected categories/types/regions/provinces contribute to query vector.
+2. Flutter should send exclude_source_rows:
+   - Use history or session seen list to prevent repeated results for same input.
+3. History document ID:
+   - history_repository currently risks using duplicated place.id.
+   - Should use Firestore documentId or sourceRow instead.
+4. sourceRow mapping:
+   - recommendation_repository maps sourceRow by index = sourceRow - 1.
+   - This works now because sourceRow is sequential, but safer to build Map<int, Place> by sourceRow.
+5. Backend deploy:
+   - For real mobile usage, deploy FastAPI or set LAN host correctly.
+6. Docs:
+   - PROJECT_STATUS.md / CODEX_HANDOFF.md may still mention older model state.
+   - Update them after KNN V2 integration is finalized.
+7. Tests:
+   - flutter analyze passed previously.
+   - flutter test passed previously, but test coverage is minimal.
+   - Need backend tests for KNN multi-select, optional province, exclude, and response schema.
+
+Current remaining work before project is "complete enough":
+1. Finish KNN V2 integration quality:
+   - Fix multi-select query vector.
+   - Add exclude already seen places.
+   - Decide limit/pagination behavior.
+   - Test FastAPI endpoint manually and with unit tests.
+   - Make Flutter use backend results confidently, with clear fallback behavior.
+2. Finish UX/UI polish:
+   - Continue matching Figma screens page by page.
+   - Especially Start, Home header, Preferences, Detail, Video, Profile.
+3. Mobile testing:
+   - Currently paused by user.
+   - Later test on actual Android phone, including Firebase Auth, Firestore, Storage upload, video playback, image loading, KNN backend connection.
+4. Image issue:
+   - Some images in app/history appeared the same because Google Places image URLs may require valid API/key or stored URLs may expire/be restricted.
+   - User paused Google Places API billing/key issue for now.
+   - Later fix by storing stable images in Firebase Storage or using valid Places photo flow.
+5. Report/documentation:
+   - Can start writing Chapter 1-5 updates now because system concept and dataset are stable.
+   - KNN details should be updated after final backend logic fix.
+6. Final assets:
+   - User plans to design final logo/graphics personally.
+   - Keep logo/app name placeholders until user provides real assets.
+7. Build APK:
+   - Do after system logic, KNN integration, UI polish, and user-provided logo/graphics are stable.
+
+Suggested next step in new chat:
+"ช่วยแก้ KNN V2 integration ต่อ โดยเริ่มจาก backend/main.py ให้รองรับ multi-select category/type/region/province จริง แล้วให้ Flutter ส่ง exclude_source_rows จาก history/session เพื่อไม่ให้ recommendation ซ้ำ จากนั้นรัน test/analyze ให้ครบ"
+
+Useful commands:
+cd C:\flutter\flutter-Project\project
+flutter pub get
+flutter analyze
+flutter test
+flutter run -d chrome
+
+Run backend:
+cd C:\flutter\flutter-Project\project\backend
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+
+For phone/LAN backend later:
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+Then set Flutter backend URL to http://<computer-lan-ip>:8000
+
+Important note for new chat:
+Do not restart from scratch. The app already has Firebase Auth, Firestore, Storage, user video upload/feed, profile/history/settings/about pages, and KNN V2 artifact. Continue from current codebase and preserve existing user changes.

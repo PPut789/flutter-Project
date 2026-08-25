@@ -8,12 +8,26 @@ export จาก Colab แล้ว
 Backend โหลดไฟล์:
 
 ```text
-backend/models/travel_recommendation_knn_model_v1.pkl
+backend/models/travel_recommendation_knn_model_v2.pkl
 ```
 
-ไฟล์นี้บันทึก feature matrix, encoder, weights, metadata และผล evaluation
-จาก Colab โดยใช้ `scikit-learn 1.6.1` ดังนั้น dependency ถูกล็อกให้ตรงกับ
-ไฟล์ `.pkl`
+ไฟล์ v2 เป็น artifact ที่มี fitted `NearestNeighbors` model จริงจาก
+`model.fit(...)` แล้ว ไม่ใช่แค่ feature matrix สำหรับคำนวณชั่วคราว
+
+แนวทาง feature ของ v2:
+
+- One-hot: `region`, `province`, `category`, `type`
+- Multi-label: `activity`
+- TF-IDF: `nameTh`, `nameEn`, `description`, `highlight`, `tags`
+- Weight: region 2.0, province 2.5, category 3.0, type 3.0, activity 4.0, text 1.4
+
+Artifact เก็บ 2 โมเดล:
+
+- `model_with_province` ใช้เมื่อผู้ใช้เลือกจังหวัด
+- `model_without_province` ใช้เมื่อผู้ใช้ไม่เลือกจังหวัด เพื่อให้จังหวัดเป็น optional ตาม flow ของแอป
+
+ไฟล์ `.pkl` export จาก Colab โดยใช้ `scikit-learn 1.6.1` ดังนั้น dependency
+ถูกล็อกให้ตรงกับไฟล์โมเดล
 
 ## Run
 
@@ -51,7 +65,9 @@ POST http://127.0.0.1:8000/recommend
   "provinces": ["ภูเก็ต"],
   "categories": ["ธรรมชาติ"],
   "types": ["จุดชมวิว"],
-  "activities": ["ชมวิว", "ถ่ายรูป"]
+  "activities": ["ชมวิว", "ถ่ายรูป"],
+  "keywords": ["ทะเล", "วิวสวย"],
+  "limit": 20
 }
 ```
 
@@ -61,7 +77,23 @@ POST http://127.0.0.1:8000/recommend
 "provinces": []
 ```
 
-API จัดอันดับสถานที่ทั้งหมดที่ตรงความสนใจในพื้นที่ที่เลือก และส่ง
+ถ้าต้องการให้การค้นหาด้วย input เดิมไม่เจอสถานที่เดิม ให้ส่ง `sourceRow`
+ของสถานที่ที่เคยเห็นแล้วมาใน `exclude_source_rows`:
+
+```json
+{
+  "regions": ["ภาคใต้"],
+  "provinces": [],
+  "categories": ["ธรรมชาติ"],
+  "types": ["จุดชมวิว"],
+  "activities": ["ชมวิว", "ถ่ายรูป"],
+  "exclude_source_rows": [403, 549, 1129],
+  "limit": 20
+}
+```
+
+API ใช้ KNN จัดอันดับจากความคล้ายคลึงของ feature และ text keywords
+แต่ยังล็อกพื้นที่ตาม `region` และ `province` ที่ผู้ใช้เลือก จากนั้นส่ง
 `sourceRow` กลับไปให้ Flutter หยิบข้อมูลปัจจุบันจาก Firestore จึงยังใช้รูป
 YouTube และ `videoUrls` ที่อัปเดตใน Firebase ได้
 

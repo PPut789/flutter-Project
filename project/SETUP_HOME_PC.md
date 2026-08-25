@@ -174,6 +174,7 @@ Repo นี้มีไฟล์สำคัญพร้อมแล้ว:
 - KNN model: `backend/models/travel_recommendation_knn_model_v1.pkl`
 - Backend API: `backend/main.py`
 - Storage upload tool: `tools/upload_attraction_video_rest.mjs`
+- User video upload feature: `videos` collection and `user_videos/{uid}/`
 
 ## 10. Files Not Included
 
@@ -197,5 +198,5 @@ Repo นี้มีไฟล์สำคัญพร้อมแล้ว:
 5. เปิด Flutter web หรือมือถือ
 6. Login/Register ด้วย Firebase Auth
 7. ตรวจ Home Recommendation
-8. ตรวจ TikTok feed
+8. ตรวจ Video feed และทดลอง Upload Video
 9. ตรวจ Detail, History และ Profile

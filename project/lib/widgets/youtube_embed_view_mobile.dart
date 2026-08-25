@@ -19,8 +19,20 @@ class _YouTubeEmbedViewState extends State<YouTubeEmbedView> {
     super.initState();
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.black)
-      ..loadHtmlString(_buildHtml(widget.url));
+      ..setBackgroundColor(Colors.black);
+
+    final embedUrl = _buildEmbedUrl(widget.url);
+    if (embedUrl != null) {
+      controller.loadRequest(
+        embedUrl,
+        headers: const {'Referer': 'https://www.youtube.com/'},
+      );
+    } else {
+      controller.loadHtmlString(
+        '<html><body style="margin:0;background:#000"></body></html>',
+        baseUrl: 'https://www.youtube.com',
+      );
+    }
   }
 
   @override
@@ -28,30 +40,15 @@ class _YouTubeEmbedViewState extends State<YouTubeEmbedView> {
     return WebViewWidget(controller: controller);
   }
 
-  String _buildHtml(String url) {
+  Uri? _buildEmbedUrl(String url) {
     final videoId = YoutubePlayerController.convertUrlToId(url);
-    if (videoId == null) {
-      return '<html><body style="margin:0;background:#000"></body></html>';
-    }
+    if (videoId == null) return null;
 
-    return '''
-<!doctype html>
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-      html, body { margin: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
-      iframe { width: 100%; height: 100%; border: 0; display: block; }
-    </style>
-  </head>
-  <body>
-    <iframe
-      src="https://www.youtube.com/embed/$videoId?playsinline=1&rel=0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowfullscreen>
-    </iframe>
-  </body>
-</html>
-''';
+    return Uri.https('www.youtube.com', '/embed/$videoId', {
+      'playsinline': '1',
+      'rel': '0',
+      'autoplay': '1',
+      'origin': 'https://www.youtube.com',
+    });
   }
 }

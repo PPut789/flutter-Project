@@ -6,7 +6,9 @@
 
 โปรเจคนี้เป็น Mobile Application ที่พัฒนาด้วย Flutter สำหรับแนะนำสถานที่ท่องเที่ยวในประเทศไทย โดยอ้างอิงจากความสนใจที่ผู้ใช้เลือกเอง เช่น ภูมิภาค จังหวัด หมวดหมู่ ประเภทสถานที่ และกิจกรรมที่สนใจ
 
-แนวคิดหลักของระบบคือ Personalized Tourist Attraction Recommendation System using Machine Learning โดยใช้ Content-Based KNN / Cosine Similarity เปรียบเทียบ preference ของผู้ใช้กับ feature ของสถานที่ ปัจจุบัน Flutter เชื่อม Firebase และเรียก FastAPI ที่โหลดโมเดล `.pkl` สำหรับจัดอันดับ recommendation แล้ว โดยมี scoring ภายในแอปเป็น fallback เฉพาะกรณี backend ไม่พร้อมใช้งาน
+แนวคิดหลักของระบบคือ Personalized Tourist Attraction Recommendation System using Machine Learning โดยใช้ Content-Based KNN / Cosine Similarity เปรียบเทียบ preference ของผู้ใช้กับ feature ของสถานที่ ปัจจุบัน Flutter เชื่อม Firebase และเรียก FastAPI ที่โหลด `.pkl` artifact สำหรับจัดอันดับ recommendation แล้ว โดยมี scoring ภายในแอปเป็น fallback เฉพาะกรณี backend ไม่พร้อมใช้งาน
+
+> **PINNED - งานหลักถัดไป:** `.pkl` ปัจจุบันเก็บ feature matrix, metadata, columns, weights และ evaluation แต่ยังไม่ได้เก็บ `sklearn.neighbors.NearestNeighbors` ที่ผ่าน `fit()` ต้องกลับไปเทรน KNN จริงใน Colab, export `.pkl` ใหม่ และแก้ FastAPI ให้เรียก `model.kneighbors()` ก่อนถือว่างาน Machine Learning เสร็จสมบูรณ์
 
 ## 2. Tech Stack
 
@@ -22,7 +24,7 @@
 - Recommendation model: Python + Pandas + Scikit-learn, export เป็น `.pkl`
 - Recommendation API: FastAPI
 - Map: Google Maps ผ่าน `url_launcher`
-- Video: YouTube embed และ short-video feed จาก `videoUrls`
+- Video: YouTube embed และ user-uploaded Video feed ผ่าน Firebase Storage
 
 ## 3. Dataset ปัจจุบัน
 
@@ -383,7 +385,7 @@ Top activity: ถ่ายรูป
 
 ## 12. สถานะ KNN / Machine Learning
 
-สร้างโมเดล Content-Based KNN / Cosine Similarity ใน Google Colab แล้ว โดยผู้พัฒนาเป็นผู้รันขั้นตอนการเตรียมข้อมูล แปลง feature ทดสอบผล และ export artifact ด้วยตนเอง
+สร้าง KNN-style Content-Based / Cosine Similarity pipeline ใน Google Colab แล้ว โดยผู้พัฒนาเป็นผู้รันขั้นตอนการเตรียมข้อมูล แปลง feature ทดสอบผล และ export artifact ด้วยตนเอง แต่ยังต้องเทรน `NearestNeighbors.fit()` และ export estimator จริงอีกครั้ง
 
 - Feature: region, province, category, type, activity
 - Transformation: one-hot encoding และ multi-hot encoding สำหรับ activity
@@ -396,12 +398,22 @@ Top activity: ถ่ายรูป
 - Average F1@10: 0.4278
 - Average Hit Rate@10: 1.0000
 
-FastAPI โหลด `.pkl` และ Flutter ใช้ผลอันดับจาก API แล้ว โดย `sourceRow` ใช้เชื่อมอันดับกลับเข้าข้อมูล Firestore ปัจจุบัน
+FastAPI โหลด `.pkl` และ Flutter ใช้ผลอันดับจาก API แล้ว โดย `sourceRow` ใช้เชื่อมอันดับกลับเข้าข้อมูล Firestore ปัจจุบัน อย่างไรก็ตาม backend ยังคำนวณ cosine similarity จาก matrix โดยตรง ไม่ได้เรียก estimator ผ่าน `kneighbors()`
 
 ## 13. สิ่งที่ยังไม่ได้ทำ
 
+### Firebase Security
+
+- ตรวจและ deploy Firestore/Storage rules รอบ production แล้วเมื่อ 2026-06-30
+- User อ่าน/แก้ข้อมูลบัญชีและ history ได้เฉพาะ path ของตัวเอง
+- Video update แก้ได้เฉพาะรายละเอียดที่อนุญาต โดยเปลี่ยน owner, file URL, storage path, status และ createdAt ไม่ได้
+- Storage จำกัด owner, path, content type และขนาดไฟล์สำหรับ video/profile image
+
 ### Recommendation / Machine Learning
 
+- เทรน `sklearn.neighbors.NearestNeighbors(metric='cosine', algorithm='brute')` ด้วย `fit(feature_matrix)` ใน Colab
+- export estimator, encoder/columns, feature matrix, metadata, weights และ evaluation เป็น `.pkl` ใหม่
+- แก้ FastAPI ให้ใช้ `model.kneighbors()` และทดสอบผลเทียบกับ evaluation เดิม
 - ทดสอบ recommendation end-to-end ใน Flutter ขณะเปิด backend บนเครื่อง
 - พิจารณา deploy FastAPI เพื่อใช้งานจากมือถือจริงนอกเครื่องพัฒนา
 - ยังไม่ได้ทำ user-history based recommendation
@@ -535,7 +547,7 @@ Firebase ใช้สำหรับ:
 
 ระบบนี้เป็น Personalized Tourist Attraction Recommendation System using Machine Learning ที่ออกแบบให้ใช้ความสนใจของผู้ใช้เป็น input หลัก เช่น ภูมิภาค จังหวัด หมวดหมู่ ประเภท และกิจกรรม จากนั้นนำ preference เหล่านี้ไปเปรียบเทียบกับ feature ของสถานที่ท่องเที่ยวใน dataset
 
-สถานะปัจจุบันของโปรเจคใช้ dataset จริงจาก Firestore และใช้โมเดล Content-Based KNN / Cosine Similarity ที่ export เป็น `.pkl` ผ่าน FastAPI เพื่อจัดอันดับสถานที่ตาม preference ของผู้ใช้ แอปรองรับจังหวัดแบบ optional ตามการออกแบบเดิม
+สถานะปัจจุบันของโปรเจคใช้ dataset จริงจาก Firestore และใช้ KNN-style Content-Based / Cosine Similarity artifact ที่ export เป็น `.pkl` ผ่าน FastAPI เพื่อจัดอันดับสถานที่ตาม preference ของผู้ใช้ แอปรองรับจังหวัดแบบ optional ตามการออกแบบเดิม แต่ยังต้องเทรนและ export `NearestNeighbors` estimator จริง
 
 นอกจากนี้ โปรเจคเริ่มทำ media enrichment แล้ว โดยใช้ Google Places Photos เพื่อเติมรูปภาพจริงให้สถานที่ท่องเที่ยว และใช้ YouTube Data API v3 เพื่อเติมลิงก์วิดีโอใน dataset ทำให้หน้า Detail ของแอปสามารถแสดงรูปภาพและคลิปตามข้อมูลจริงมากขึ้น แทนการใช้ placeholder ทั้งหมด
 
@@ -544,11 +556,12 @@ Firebase ใช้สำหรับ:
 - App flow หลักทำงานครบแล้ว
 - Runtime dataset อ่านจาก Firestore จำนวน 2,994 documents แล้ว
 - มี Data Analytic output และ Feature Transform table แล้ว
-- Flutter เรียก FastAPI ที่โหลด KNN `.pkl` แล้ว และมี local scoring เป็น fallback
-- KNN artifact และผล evaluation ถูกเก็บในโปรเจคแล้ว
+- Flutter เรียก FastAPI ที่โหลด KNN-style `.pkl` artifact แล้ว และมี local scoring เป็น fallback
+- Feature artifact และผล evaluation ถูกเก็บในโปรเจคแล้ว แต่ KNN estimator ที่ผ่าน `fit()` ยังต้องทำใหม่
 - Login/Register เชื่อม Firebase Auth แล้ว
 - Detail page รองรับหลายรูปและหลาย YouTube URLs แล้ว
-- TikTok feed รองรับ `videoUrls` จาก Firebase Storage แล้ว
+- Video feed รองรับ user-uploaded videos จาก Firebase Storage/Firestore แล้ว
+- Bottom navigation เปลี่ยนเป็น Home, Preference, +, Video, Profile แล้ว
 - รูปภาพเติมอัตโนมัติด้วย Google Places Photos ครบถึงแถวที่ 2994 แล้ว
 - YouTube เติม sample แล้ว แต่ต้องรอต่อเพราะ quota
 - Tests/build ผ่านล่าสุด

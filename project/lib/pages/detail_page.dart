@@ -1,9 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../models/place_model.dart';
+import '../utils/place_media.dart';
+import '../widgets/app_chrome.dart';
+import '../widgets/place_image_placeholder.dart';
 import '../widgets/youtube_embed_view.dart';
 
 class DetailPage extends StatefulWidget {
@@ -17,7 +19,6 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   int currentImageIndex = 0;
-  int scrollResetToken = 0;
   final Set<String> failedImageUrls = {};
 
   void _selectImage(int index, int imageCount) {
@@ -44,58 +45,41 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final rawImages = widget.place.images.isNotEmpty
-        ? widget.place.images
-        : ['assets/images/maya_bay.jpg'];
+    final rawImages = placeImageCandidates(widget.place);
     final images = rawImages
         .where((image) => !failedImageUrls.contains(image))
         .toList();
     final youtubeUrls = widget.place.youtubeUrls.isNotEmpty
         ? widget.place.youtubeUrls
         : [if (widget.place.youtubeUrl.isNotEmpty) widget.place.youtubeUrl];
-    final displayImages = images.isNotEmpty
-        ? images
-        : ['assets/images/maya_bay.jpg'];
+    final displayImages = images.isNotEmpty ? images : [''];
 
     if (currentImageIndex >= displayImages.length) {
       currentImageIndex = displayImages.length - 1;
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F3F8),
-      appBar: AppBar(
-        title: Text(
-          widget.place.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        backgroundColor: const Color(0xFFF7F3F8),
-      ),
-
-      body: NotificationListener<ScrollStartNotification>(
-        onNotification: (notification) {
-          setState(() {
-            scrollResetToken++;
-          });
-          return false;
-        },
-        child: ListView(
-          children: [
-            Column(
-              children: [
-                GestureDetector(
-                  onHorizontalDragEnd: (details) {
-                    final velocity = details.primaryVelocity ?? 0;
-                    if (velocity < 0) {
-                      _showNextImage(displayImages.length);
-                    } else if (velocity > 0) {
-                      _showPreviousImage(displayImages.length);
-                    }
-                  },
-                  child: Stack(
-                    children: [
-                      _PlaceImage(
+      backgroundColor: Colors.white,
+      body: ListView(
+        children: [
+          Column(
+            children: [
+              GestureDetector(
+                onHorizontalDragEnd: (details) {
+                  final velocity = details.primaryVelocity ?? 0;
+                  if (velocity < 0) {
+                    _showNextImage(displayImages.length);
+                  } else if (velocity > 0) {
+                    _showPreviousImage(displayImages.length);
+                  }
+                },
+                child: Stack(
+                  children: [
+                    Hero(
+                      tag: _placeHeroTag(widget.place),
+                      child: _PlaceImage(
                         imagePath: displayImages[currentImageIndex],
+                        placeName: widget.place.name,
                         height: 320,
                         width: double.infinity,
                         onLoadError: () {
@@ -106,259 +90,214 @@ class _DetailPageState extends State<DetailPage> {
                           });
                         },
                       ),
-                      const Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.transparent, Color(0xAA000000)],
-                            ),
-                          ),
+                    ),
+                    Positioned(
+                      top: MediaQuery.paddingOf(context).top + 12,
+                      left: 16,
+                      child: RoundBackButton(
+                        onPressed: () => Navigator.pop(context),
+                        backgroundColor: Colors.black.withValues(alpha: 0.28),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    if (displayImages.length > 1) ...[
+                      Positioned(
+                        left: 12,
+                        top: 0,
+                        bottom: 0,
+                        child: _ImageNavButton(
+                          icon: Icons.chevron_left,
+                          onTap: () => _showPreviousImage(displayImages.length),
                         ),
                       ),
                       Positioned(
-                        left: 20,
-                        right: 20,
-                        bottom: 18,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _HeroBadge(text: widget.place.category),
-                            const SizedBox(height: 10),
-                            Text(
-                              widget.place.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                height: 1.12,
-                                fontWeight: FontWeight.w900,
-                                shadows: [
-                                  Shadow(blurRadius: 12, color: Colors.black54),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on_outlined,
-                                  color: Colors.white70,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    "${widget.place.province}, ${widget.place.region}",
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                        right: 12,
+                        top: 0,
+                        bottom: 0,
+                        child: _ImageNavButton(
+                          icon: Icons.chevron_right,
+                          onTap: () => _showNextImage(displayImages.length),
                         ),
                       ),
-                      if (displayImages.length > 1) ...[
-                        Positioned(
-                          left: 12,
-                          top: 0,
-                          bottom: 0,
-                          child: _ImageNavButton(
-                            icon: Icons.chevron_left,
-                            onTap: () =>
-                                _showPreviousImage(displayImages.length),
-                          ),
-                        ),
-                        Positioned(
-                          right: 12,
-                          top: 0,
-                          bottom: 0,
-                          child: _ImageNavButton(
-                            icon: Icons.chevron_right,
-                            onTap: () => _showNextImage(displayImages.length),
-                          ),
-                        ),
-                        Positioned(
-                          right: 14,
-                          bottom: 14,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              "${currentImageIndex + 1}/${displayImages.length}",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  height: 76,
-
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    scrollDirection: Axis.horizontal,
-
-                    itemCount: displayImages.length,
-
-                    itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () {
-                          _selectImage(index, displayImages.length);
-                        },
-
+                      Positioned(
+                        right: 14,
+                        bottom: 14,
                         child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 5),
-
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: currentImageIndex == index
-                                  ? const Color(0xFF710078)
-                                  : Colors.transparent,
-
-                              width: 3,
-                            ),
-
-                            borderRadius: BorderRadius.circular(12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
                           ),
-
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-
-                            child: _PlaceImage(
-                              imagePath: displayImages[index],
-
-                              width: 92,
-                              height: 70,
-                              onLoadError: () {
-                                final imagePath = displayImages[index];
-                                if (!imagePath.startsWith('http')) return;
-                                setState(() {
-                                  failedImageUrls.add(imagePath);
-                                });
-                              },
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            "${currentImageIndex + 1}/${displayImages.length}",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 30),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _InfoPill(
-                        icon: Icons.category_outlined,
-                        text: widget.place.type,
-                      ),
-                      _InfoPill(
-                        icon: Icons.explore_outlined,
-                        text: widget.place.activity,
-                      ),
-                      _InfoPill(
-                        icon: Icons.photo_library_outlined,
-                        text: '${displayImages.length} photos',
                       ),
                     ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  if (youtubeUrls.isNotEmpty) ...[
-                    _DetailSectionCard(
-                      title: 'Travel Videos',
-                      icon: Icons.play_circle_outline,
-                      child: _YouTubeSection(
-                        youtubeUrls: youtubeUrls,
-                        scrollResetToken: scrollResetToken,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
                   ],
+                ),
+              ),
 
-                  _DetailSectionCard(
-                    title: 'About',
-                    icon: Icons.notes_outlined,
-                    child: Text(
-                      widget.place.description,
-                      style: const TextStyle(fontSize: 16, height: 1.55),
-                    ),
-                  ),
+              const SizedBox(height: 12),
 
-                  const SizedBox(height: 18),
+              SizedBox(
+                height: 76,
 
-                  if (widget.place.tags.isNotEmpty)
-                    _DetailSectionCard(
-                      title: 'Tags',
-                      icon: Icons.local_offer_outlined,
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: widget.place.tags.map((tag) {
-                          return _DetailTag(text: tag);
-                        }).toList(),
-                      ),
-                    ),
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  scrollDirection: Axis.horizontal,
 
-                  const SizedBox(height: 18),
+                  itemCount: displayImages.length,
 
-                  SizedBox(
-                    width: double.infinity,
-
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        _openGoogleMaps(context);
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        _selectImage(index, displayImages.length);
                       },
 
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF710078),
-                        padding: const EdgeInsets.symmetric(vertical: 15),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: currentImageIndex == index
+                                ? const Color(0xFF710078)
+                                : Colors.transparent,
+
+                            width: 3,
+                          ),
+
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+
+                          child: _PlaceImage(
+                            imagePath: displayImages[index],
+                            placeName: widget.place.name,
+
+                            width: 92,
+                            height: 70,
+                            onLoadError: () {
+                              final imagePath = displayImages[index];
+                              if (!imagePath.startsWith('http')) return;
+                              setState(() {
+                                failedImageUrls.add(imagePath);
+                              });
+                            },
+                          ),
+                        ),
                       ),
-
-                      icon: const Icon(Icons.map_outlined),
-
-                      label: const Text("Open in Google Maps"),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-                ],
+                    );
+                  },
+                ),
               ),
+            ],
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.place.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
+                              height: 1.15,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "${widget.place.province} • ${widget.place.region}",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: appTextMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton.filled(
+                      onPressed: () => _openGoogleMaps(context),
+                      icon: const Icon(Icons.map_outlined),
+                      tooltip: 'เปิดใน Google Maps',
+                      style: IconButton.styleFrom(
+                        backgroundColor: appPurple,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _InfoPill(
+                      icon: Icons.category_outlined,
+                      text: widget.place.category,
+                    ),
+                    _InfoPill(
+                      icon: Icons.category_outlined,
+                      text: widget.place.type,
+                    ),
+                    _InfoPill(
+                      icon: Icons.explore_outlined,
+                      text: widget.place.activity,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 22),
+                const Divider(color: appBorder, height: 1),
+                const SizedBox(height: 24),
+
+                _DetailSection(
+                  title: 'เกี่ยวกับสถานที่',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (youtubeUrls.isNotEmpty) ...[
+                        _YouTubeSection(
+                          youtubeUrls: youtubeUrls,
+                          placeName: widget.place.name,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      Text(
+                        widget.place.description,
+                        style: const TextStyle(fontSize: 16, height: 1.6),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -391,32 +330,8 @@ class _DetailPageState extends State<DetailPage> {
   }
 }
 
-class _HeroBadge extends StatelessWidget {
-  final String text;
-
-  const _HeroBadge({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 260),
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
+String _placeHeroTag(Place place) {
+  return 'place-image-${place.documentId.isNotEmpty ? place.documentId : place.id}';
 }
 
 class _InfoPill extends StatelessWidget {
@@ -433,14 +348,14 @@ class _InfoPill extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 300),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF8F1FA),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE8E0EC)),
+        border: Border.all(color: appBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: const Color(0xFF710078)),
+          Icon(icon, size: 15, color: appPurple),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
@@ -456,92 +371,33 @@ class _InfoPill extends StatelessWidget {
   }
 }
 
-class _DetailSectionCard extends StatelessWidget {
+class _DetailSection extends StatelessWidget {
   final String title;
-  final IconData icon;
   final Widget child;
 
-  const _DetailSectionCard({
-    required this.title,
-    required this.icon,
-    required this.child,
-  });
+  const _DetailSection({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE8E0EC)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF710078).withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: const Color(0xFF710078), size: 20),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailTag extends StatelessWidget {
-  final String text;
-
-  const _DetailTag({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF6F1),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color(0xFF286B5E),
-          fontWeight: FontWeight.w800,
-          fontSize: 12,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
         ),
-      ),
+        const SizedBox(height: 16),
+        child,
+      ],
     );
   }
 }
 
 class _YouTubeSection extends StatefulWidget {
   final List<String> youtubeUrls;
-  final int scrollResetToken;
+  final String placeName;
 
-  const _YouTubeSection({
-    required this.youtubeUrls,
-    required this.scrollResetToken,
-  });
+  const _YouTubeSection({required this.youtubeUrls, required this.placeName});
 
   @override
   State<_YouTubeSection> createState() => _YouTubeSectionState();
@@ -608,7 +464,7 @@ class _YouTubeSectionState extends State<_YouTubeSection> {
                 url: url,
                 index: index,
                 total: widget.youtubeUrls.length,
-                scrollResetToken: widget.scrollResetToken,
+                placeName: widget.placeName,
               );
             },
           ),
@@ -684,13 +540,13 @@ class _YouTubeCard extends StatefulWidget {
   final String url;
   final int index;
   final int total;
-  final int scrollResetToken;
+  final String placeName;
 
   const _YouTubeCard({
     required this.url,
     required this.index,
     required this.total,
-    required this.scrollResetToken,
+    required this.placeName,
   });
 
   @override
@@ -698,7 +554,6 @@ class _YouTubeCard extends StatefulWidget {
 }
 
 class _YouTubeCardState extends State<_YouTubeCard> {
-  YoutubePlayerController? controller;
   String? videoId;
   bool isPlayerVisible = false;
 
@@ -712,45 +567,22 @@ class _YouTubeCardState extends State<_YouTubeCard> {
   void didUpdateWidget(covariant _YouTubeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.url != widget.url) {
-      _closePlayer();
       videoId = YoutubePlayerController.convertUrlToId(widget.url);
-    }
-
-    if (oldWidget.scrollResetToken != widget.scrollResetToken) {
-      _closePlayer();
+      isPlayerVisible = false;
     }
   }
 
-  @override
-  void dispose() {
-    _closePlayer();
-    super.dispose();
-  }
-
-  void _openPlayer() {
+  void _showPlayer() {
     if (videoId == null) return;
-
     setState(() {
       isPlayerVisible = true;
-      if (!kIsWeb) {
-        controller = YoutubePlayerController.fromVideoId(
-          videoId: videoId!,
-          autoPlay: true,
-          params: const YoutubePlayerParams(
-            showControls: true,
-            showFullscreenButton: false,
-            playsInline: true,
-            strictRelatedVideos: true,
-          ),
-        );
-      }
     });
   }
 
-  void _closePlayer() {
-    controller?.close();
-    controller = null;
-    isPlayerVisible = false;
+  void _hidePlayer() {
+    setState(() {
+      isPlayerVisible = false;
+    });
   }
 
   @override
@@ -769,28 +601,64 @@ class _YouTubeCardState extends State<_YouTubeCard> {
         ),
         clipBehavior: Clip.antiAlias,
         child: videoId == null
-            ? _YouTubeFallbackThumbnail(
+            ? const _YouTubeUnavailableCard()
+            : isPlayerVisible
+            ? _EmbeddedYouTubePlayer(url: widget.url, onClose: _hidePlayer)
+            : _YouTubeFallbackThumbnail(
                 thumbnailUrl: thumbnailUrl,
-                index: widget.index,
-                onTap: null,
-              )
-            : !isPlayerVisible
-            ? _YouTubeFallbackThumbnail(
-                thumbnailUrl: thumbnailUrl,
-                index: widget.index,
-                onTap: _openPlayer,
-              )
-            : kIsWeb
-            ? YouTubeEmbedView(url: widget.url)
-            : YoutubePlayer(
-                key: ValueKey(videoId),
-                controller: controller!,
-                aspectRatio: 16 / 9,
-                backgroundColor: Colors.black87,
-                autoFullScreen: false,
-                enableFullScreenOnVerticalDrag: false,
-                keepAlive: false,
+                title: 'รีวิวเที่ยว ${widget.placeName} ฉบับเต็ม',
+                onTap: _showPlayer,
               ),
+      ),
+    );
+  }
+}
+
+class _EmbeddedYouTubePlayer extends StatelessWidget {
+  final String url;
+  final VoidCallback onClose;
+
+  const _EmbeddedYouTubePlayer({required this.url, required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        YouTubeEmbedView(key: ValueKey(url), url: url),
+        Positioned(
+          right: 10,
+          top: 10,
+          child: Material(
+            color: Colors.black.withValues(alpha: 0.52),
+            shape: const CircleBorder(),
+            child: IconButton(
+              tooltip: 'ปิดวิดีโอ',
+              onPressed: onClose,
+              icon: const Icon(Icons.close_rounded),
+              color: Colors.white,
+              iconSize: 20,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _YouTubeUnavailableCard extends StatelessWidget {
+  const _YouTubeUnavailableCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Text(
+          'ไม่พบข้อมูลวิดีโอ',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+        ),
       ),
     );
   }
@@ -798,12 +666,12 @@ class _YouTubeCardState extends State<_YouTubeCard> {
 
 class _YouTubeFallbackThumbnail extends StatelessWidget {
   final String thumbnailUrl;
-  final int index;
+  final String title;
   final VoidCallback? onTap;
 
   const _YouTubeFallbackThumbnail({
     required this.thumbnailUrl,
-    required this.index,
+    required this.title,
     required this.onTap,
   });
 
@@ -823,15 +691,13 @@ class _YouTubeFallbackThumbnail extends StatelessWidget {
               },
             ),
           const DecoratedBox(decoration: BoxDecoration(color: Colors.black38)),
-          const Center(
-            child: Icon(Icons.play_circle_fill, color: Colors.white, size: 64),
-          ),
+          const Center(child: _YouTubePlayButton()),
           Positioned(
             left: 16,
             right: 16,
-            bottom: 16,
+            bottom: 15,
             child: Text(
-              'YouTube Video ${index + 1}',
+              title,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -839,7 +705,69 @@ class _YouTubeFallbackThumbnail extends StatelessWidget {
               ),
             ),
           ),
+          if (onTap != null)
+            Positioned(
+              right: 12,
+              top: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.46),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.play_circle_outline_rounded,
+                      color: Colors.white,
+                      size: 15,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'เล่นในแอป',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _YouTubePlayButton extends StatelessWidget {
+  const _YouTubePlayButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 68,
+      height: 68,
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withValues(alpha: 0.92),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.26),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.play_arrow_rounded,
+        color: Colors.white,
+        size: 42,
       ),
     );
   }
@@ -847,12 +775,14 @@ class _YouTubeFallbackThumbnail extends StatelessWidget {
 
 class _PlaceImage extends StatelessWidget {
   final String imagePath;
+  final String placeName;
   final double height;
   final double width;
   final VoidCallback? onLoadError;
 
   const _PlaceImage({
     required this.imagePath,
+    required this.placeName,
     required this.height,
     required this.width,
     this.onLoadError,
@@ -860,6 +790,14 @@ class _PlaceImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (imagePath.isEmpty) {
+      return PlaceImagePlaceholder(
+        placeName: placeName,
+        height: height,
+        width: width,
+      );
+    }
+
     if (imagePath.startsWith('http')) {
       return Image.network(
         imagePath,
@@ -870,11 +808,10 @@ class _PlaceImage extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             onLoadError?.call();
           });
-          return Image.asset(
-            'assets/images/maya_bay.jpg',
+          return PlaceImagePlaceholder(
+            placeName: placeName,
             height: height,
             width: width,
-            fit: BoxFit.cover,
           );
         },
       );

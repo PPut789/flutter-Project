@@ -10,10 +10,10 @@
 - Firestore collection `attractions` มีข้อมูล 2,994 documents
 - Flutter โหลด attraction data จาก Firestore
 - Preferences ของ user ถูกบันทึกใน `users/{uid}`
-- หน้า Home ใช้ FastAPI backend เรียกโมเดล KNN `.pkl`
+- หน้า Home ใช้ FastAPI backend เรียก KNN-style `.pkl` artifact
 - ถ้า backend ไม่เปิด หน้า Home fallback ไปใช้ local scoring เดิม
 - Profile, History, About App, Logout ทำแล้ว
-- TikTok feed เล่นวิดีโอจาก `videoUrls` ใน Firestore/Storage แล้ว
+- Video feed รองรับ user-uploaded videos ผ่าน Firebase Storage/Firestore แล้ว
 
 ## Firebase
 
@@ -24,6 +24,8 @@
 - Main collection: `attractions`
 
 ## KNN Model
+
+> **PINNED:** ไฟล์ปัจจุบันยังไม่มี `NearestNeighbors` estimator ที่ผ่าน `fit()` ภายใน เก็บ feature matrix และข้อมูลประกอบสำหรับคำนวณ cosine โดยตรง งานหลักถัดไปคือต้องเทรนใน Colab ใหม่, export `.pkl` และแก้ backend ให้ใช้ `model.kneighbors()`
 
 Model artifact:
 
@@ -44,14 +46,20 @@ Evaluation summary:
 - F1@10: 0.4278
 - Hit Rate@10: 1.0000
 
-## Video Feed Demo Places
+## Video Feed / Upload
 
-Firebase Storage + Firestore `videoUrls` ถูกตั้งไว้แล้วสำหรับ:
+Navbar มี Home, Preference, +, Video, Profile
 
-- เมืองเก่าอุทัยธานี
-- อ่าวมาหยา
-- วัดร่องขุ่น
-- อุทยานแห่งชาติดอยอินทนนท์
+- ปุ่ม + เปิดหน้า Upload Video
+- User เลือกวิดีโอจากเครื่อง/มือถือ
+- 1 คลิปผูกกับ 1 สถานที่
+- ถ้าสถานที่มีในแอป ให้ค้นหาและเลือกจาก attraction dataset
+- ถ้าไม่มีในแอป ให้กรอก Google Maps link
+- อัปโหลดแล้วสร้าง document ใน `videos`
+- วิดีโอเก็บใน Storage path `user_videos/{uid}/{videoId}.mp4`
+- หน้า Video feed แสดงเฉพาะ user-uploaded videos และแสดงชื่อ uploader
+
+Rules สำหรับ Firestore และ Storage ถูกตรวจด้วย dry run และ deploy ล่าสุดแล้วเมื่อ 2026-06-30 โดยล็อก ownership ของ `users`, `history`, `videos`, `user_videos` และ `profile_images` รวมถึงป้องกันการแก้ owner, storage path, video URL และ status ของวิดีโอ
 
 ## How to Continue in a New Codex Chat
 
@@ -73,6 +81,7 @@ project/SETUP_HOME_PC.md และ project/CODEX_HANDOFF.md
 
 ## Remaining Work
 
+- เทรน `NearestNeighbors.fit()` จริงและแทนที่ `.pkl` ปัจจุบัน
 - ทดสอบ end-to-end บนมือถือจริง
 - ถ้าจะใช้นอก local network ต้อง deploy FastAPI backend
 - เปลี่ยน logo/graphic เป็นงานที่ผู้ใช้ทำเอง

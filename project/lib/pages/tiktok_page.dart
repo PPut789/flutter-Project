@@ -1,81 +1,115 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
+import '../data/user_repository.dart';
+import '../data/video_repository.dart';
+import '../models/app_settings.dart';
 import '../models/place_model.dart';
+import '../models/video_post_model.dart';
+import '../utils/app_routes.dart';
+import '../widgets/app_chrome.dart';
+import '../widgets/video_manage_sheet.dart';
 import 'detail_page.dart';
 
-class TikTokPage extends StatelessWidget {
+class VideoPage extends StatelessWidget {
   final List<Place> places;
 
-  const TikTokPage({super.key, required this.places});
+  const VideoPage({super.key, required this.places});
 
   @override
   Widget build(BuildContext context) {
-    final videoPlaces = places
-        .where(
-          (place) => place.videoUrls.isNotEmpty || place.tiktokUrls.isNotEmpty,
-        )
-        .toList();
+    return FutureBuilder<AppSettings>(
+      future: UserRepository.loadAppSettings(),
+      builder: (context, settingsSnapshot) {
+        if (settingsSnapshot.connectionState == ConnectionState.waiting) {
+          return const ColoredBox(
+            color: Colors.black,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    if (videoPlaces.isEmpty) {
-      return const _EmptyTikTokState();
-    }
+        final settings = settingsSnapshot.data ?? const AppSettings();
+        return StreamBuilder<List<VideoPost>>(
+          stream: VideoRepository.watchPublishedVideos(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const ColoredBox(
+                color: Colors.black,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
 
-    return PageView.builder(
-      scrollDirection: Axis.vertical,
-      itemCount: videoPlaces.length,
-      itemBuilder: (context, index) {
-        return _TikTokFeedItem(place: videoPlaces[index]);
+            if (snapshot.hasError) {
+              return _EmptyVideoState(message: 'Cannot load videos');
+            }
+
+            final videos = snapshot.data ?? const <VideoPost>[];
+            if (videos.isEmpty) {
+              return const _EmptyVideoState(message: 'No videos yet');
+            }
+
+            return PageView.builder(
+              scrollDirection: Axis.vertical,
+              itemCount: videos.length,
+              itemBuilder: (context, index) {
+                return _VideoFeedItem(
+                  video: videos[index],
+                  places: places,
+                  settings: settings,
+                );
+              },
+            );
+          },
+        );
       },
     );
   }
 }
 
-class _TikTokFeedItem extends StatefulWidget {
-  final Place place;
+class _VideoFeedItem extends StatefulWidget {
+  final VideoPost video;
+  final List<Place> places;
+  final AppSettings settings;
 
-  const _TikTokFeedItem({required this.place});
+  const _VideoFeedItem({
+    required this.video,
+    required this.places,
+    required this.settings,
+  });
 
   @override
-  State<_TikTokFeedItem> createState() => _TikTokFeedItemState();
+  State<_VideoFeedItem> createState() => _VideoFeedItemState();
 }
 
-class _TikTokFeedItemState extends State<_TikTokFeedItem> {
+class _VideoFeedItemState extends State<_VideoFeedItem> {
   late final VideoPlayerController _controller;
   bool hasVideoError = false;
-
-  static const fallbackVideoPath = 'assets/video/prototype_tiktok_feed.mp4';
+  late bool isMuted;
 
   @override
   void initState() {
     super.initState();
-    _controller = _createController()
-      ..setLooping(true)
-      ..setVolume(1)
-      ..initialize()
-          .then((_) {
-            if (!mounted) return;
-            setState(() {});
-            _controller.play();
-          })
-          .catchError((_) {
-            if (!mounted) return;
-            setState(() {
-              hasVideoError = true;
-            });
-          });
-  }
-
-  VideoPlayerController _createController() {
-    final videoUrl = widget.place.videoUrls.firstOrNull;
-    final uri = videoUrl == null ? null : Uri.tryParse(videoUrl);
-
-    if (uri != null && uri.hasScheme) {
-      return VideoPlayerController.networkUrl(uri);
-    }
-
-    return VideoPlayerController.asset(fallbackVideoPath);
+    isMuted = widget.settings.startVideosMuted;
+    _controller =
+        VideoPlayerController.networkUrl(Uri.parse(widget.video.videoUrl))
+          ..setLooping(true)
+          ..setVolume(isMuted ? 0 : 1)
+          ..initialize()
+              .then((_) {
+                if (!mounted) return;
+                setState(() {});
+                if (widget.settings.autoplayVideos) {
+                  _controller.play();
+                }
+              })
+              .catchError((_) {
+                if (!mounted) return;
+                setState(() {
+                  hasVideoError = true;
+                });
+              });
   }
 
   @override
@@ -84,9 +118,22 @@ class _TikTokFeedItemState extends State<_TikTokFeedItem> {
     super.dispose();
   }
 
+  Place? get _linkedPlace {
+    final attractionId = widget.video.attractionId;
+    if (attractionId.isEmpty) return null;
+
+    for (final place in widget.places) {
+      if (place.documentId == attractionId) return place;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final place = widget.place;
+    final video = widget.video;
+    final linkedPlace = _linkedPlace;
+    final user = FirebaseAuth.instance.currentUser;
+    final isOwner = user != null && user.uid == video.uploadedByUid;
 
     return ColoredBox(
       color: Colors.black,
@@ -113,18 +160,21 @@ class _TikTokFeedItemState extends State<_TikTokFeedItem> {
             _VideoGradient(),
             Positioned(
               left: 20,
-              right: 92,
+              right: 78,
               bottom: 28,
-              child: _PlaceSummary(place: place),
+              child: _VideoSummary(video: video),
             ),
             Positioned(
               right: 16,
-              bottom: 34,
-              child: _ActionRail(
-                place: place,
-                tiktokUrl: place.tiktokUrls.firstOrNull,
-              ),
+              bottom: 62,
+              child: _ActionRail(video: video, linkedPlace: linkedPlace),
             ),
+            if (isOwner)
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 10,
+                right: 12,
+                child: _OwnerVideoMenu(video: video, places: widget.places),
+              ),
             if (_controller.value.isInitialized && !_controller.value.isPlaying)
               const Center(
                 child: Icon(
@@ -207,7 +257,7 @@ class _VideoGradient extends StatelessWidget {
             colors: [
               Colors.black.withValues(alpha: 0.08),
               Colors.transparent,
-              Colors.black.withValues(alpha: 0.78),
+              Colors.black.withValues(alpha: 0.82),
             ],
             stops: const [0, 0.45, 1],
           ),
@@ -217,13 +267,20 @@ class _VideoGradient extends StatelessWidget {
   }
 }
 
-class _PlaceSummary extends StatelessWidget {
-  final Place place;
+class _VideoSummary extends StatelessWidget {
+  final VideoPost video;
 
-  const _PlaceSummary({required this.place});
+  const _VideoSummary({required this.video});
 
   @override
   Widget build(BuildContext context) {
+    final locationText = video.placeMode == 'google_maps'
+        ? 'Google Maps location'
+        : [
+            video.province,
+            video.region,
+          ].where((item) => item.isNotEmpty).join(', ');
+
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white),
       child: Column(
@@ -231,19 +288,49 @@ class _PlaceSummary extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            place.name,
+            _videoTitle(video),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 6),
+          if (video.caption.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              video.caption.trim(),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
+          ],
+          if (locationText.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.location_on_outlined,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    locationText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14, color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, color: Colors.white70),
-              const SizedBox(width: 4),
+              _UploaderAvatar(video: video),
+              const SizedBox(width: 7),
               Expanded(
                 child: Text(
-                  '${place.province}, ${place.region}',
+                  video.uploadedByName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 14, color: Colors.white70),
@@ -251,81 +338,148 @@ class _PlaceSummary extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: place.tags.take(3).map((tag) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: Text(
-                  tag,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
         ],
       ),
     );
   }
+
+  String _videoTitle(VideoPost video) {
+    final name = video.attractionName.trim();
+    if (name.isNotEmpty) return name;
+    if (video.placeMode == 'google_maps') return 'สถานที่จาก Google Maps';
+    return 'วิดีโอท่องเที่ยว';
+  }
 }
 
 class _ActionRail extends StatelessWidget {
-  final Place place;
-  final String? tiktokUrl;
+  final VideoPost video;
+  final Place? linkedPlace;
 
-  const _ActionRail({required this.place, required this.tiktokUrl});
+  const _ActionRail({required this.video, required this.linkedPlace});
 
   @override
   Widget build(BuildContext context) {
+    final place = linkedPlace;
+    final hasMaps = video.googleMapsUrl.isNotEmpty;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _RoundActionButton(
-          icon: Icons.place_outlined,
-          label: 'Place',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => DetailPage(place: place)),
-            );
-          },
-        ),
-        if (tiktokUrl?.isNotEmpty == true) ...[
-          const SizedBox(height: 18),
+        if (place != null)
           _RoundActionButton(
-            icon: Icons.open_in_new,
-            label: 'TikTok',
-            onTap: () => _openTikTok(context),
+            icon: Icons.place_outlined,
+            label: 'Place',
+            onTap: () {
+              Navigator.push(context, smoothRoute(DetailPage(place: place)));
+            },
+          )
+        else if (hasMaps)
+          _RoundActionButton(
+            icon: Icons.map_outlined,
+            label: 'Maps',
+            onTap: () => _openMaps(context),
           ),
-        ],
       ],
     );
   }
 
-  Future<void> _openTikTok(BuildContext context) async {
-    final url = tiktokUrl;
-    final uri = url == null ? null : Uri.tryParse(url);
+  Future<void> _openMaps(BuildContext context) async {
+    final uri = Uri.tryParse(video.googleMapsUrl);
     if (uri == null ||
         !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Cannot open TikTok link')));
+      ).showSnackBar(const SnackBar(content: Text('Cannot open Maps link')));
+    }
+  }
+}
+
+enum _OwnerVideoAction { edit, delete }
+
+class _OwnerVideoMenu extends StatelessWidget {
+  final VideoPost video;
+  final List<Place> places;
+
+  const _OwnerVideoMenu({required this.video, required this.places});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_OwnerVideoAction>(
+      tooltip: 'Video options',
+      color: Colors.white,
+      icon: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.34),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.more_vert, color: Colors.white),
+      ),
+      onSelected: (action) {
+        switch (action) {
+          case _OwnerVideoAction.edit:
+            showVideoManageSheet(
+              context: context,
+              video: video,
+              places: places,
+            );
+          case _OwnerVideoAction.delete:
+            _deleteVideo(context);
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: _OwnerVideoAction.edit,
+          child: Row(
+            children: [
+              Icon(Icons.edit_outlined),
+              SizedBox(width: 10),
+              Text('Edit'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _OwnerVideoAction.delete,
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, color: Colors.red),
+              SizedBox(width: 10),
+              Text('Delete', style: TextStyle(color: Colors.red)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _deleteVideo(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => const AppConfirmDialog(
+        icon: Icons.delete_outline_rounded,
+        title: 'ลบวิดีโอ?',
+        message: 'วิดีโอนี้จะถูกนำออกจากฟีดวิดีโอ',
+        cancelLabel: 'Cancel',
+        confirmLabel: 'Delete',
+        isDestructive: true,
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await VideoRepository.deleteVideo(video);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Video deleted')));
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Cannot delete video: $error')));
     }
   }
 }
@@ -352,13 +506,13 @@ class _RoundActionButton extends StatelessWidget {
             customBorder: const CircleBorder(),
             onTap: onTap,
             child: SizedBox(
-              width: 54,
-              height: 54,
-              child: Icon(icon, color: Colors.white, size: 28),
+              width: 42,
+              height: 42,
+              child: Icon(icon, color: Colors.white, size: 23),
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 5),
         Text(
           label,
           style: const TextStyle(
@@ -373,18 +527,52 @@ class _RoundActionButton extends StatelessWidget {
   }
 }
 
-class _EmptyTikTokState extends StatelessWidget {
-  const _EmptyTikTokState();
+class _UploaderAvatar extends StatelessWidget {
+  final VideoPost video;
+
+  const _UploaderAvatar({required this.video});
+
+  @override
+  Widget build(BuildContext context) {
+    final photoUrl = video.uploadedByPhotoUrl.trim();
+    final name = video.uploadedByName.trim();
+
+    return CircleAvatar(
+      radius: 11,
+      backgroundColor: Colors.white,
+      child: CircleAvatar(
+        radius: 10,
+        backgroundColor: const Color(0xFFEEDCF2),
+        backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+        child: photoUrl.isEmpty
+            ? Text(
+                name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Color(0xFF710078),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+}
+
+class _EmptyVideoState extends StatelessWidget {
+  final String message;
+
+  const _EmptyVideoState({required this.message});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF7F3F8),
+      color: Colors.white,
       alignment: Alignment.center,
       padding: const EdgeInsets.all(24),
-      child: const Text(
-        'No TikTok videos yet',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      child: Text(
+        message,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
     );
   }

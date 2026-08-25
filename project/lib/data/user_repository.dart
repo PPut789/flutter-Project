@@ -1,9 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../models/app_settings.dart';
 import '../models/recommendation_preferences.dart';
 
 class UserRepository {
+  static AppSettings? _cachedSettings;
+  static String? _settingsUserId;
+
+  static Stream<User?> authStateChanges() {
+    try {
+      return FirebaseAuth.instance.authStateChanges();
+    } on FirebaseException catch (error) {
+      if (error.code == 'no-app') return Stream.value(null);
+      rethrow;
+    }
+  }
+
   static DocumentReference<Map<String, dynamic>>? _userDocument() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return null;
@@ -45,5 +60,99 @@ class UserRepository {
       'preferencesUpdatedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  static Future<AppSettings> loadAppSettings({bool refresh = false}) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (!refresh && _cachedSettings != null && _settingsUserId == uid) {
+      return _cachedSettings!;
+    }
+
+    final document = _userDocument();
+    if (document == null) return const AppSettings();
+
+    try {
+      final snapshot = await document.get();
+      final settingsData = snapshot.data()?['settings'];
+      if (settingsData is Map) {
+        _cachedSettings = AppSettings.fromJson(
+          Map<String, dynamic>.from(settingsData),
+        );
+      } else {
+        _cachedSettings = const AppSettings();
+      }
+      _settingsUserId = uid;
+    } on FirebaseException {
+      _cachedSettings = const AppSettings();
+      _settingsUserId = uid;
+    }
+
+    return _cachedSettings!;
+  }
+
+  static Future<void> saveAppSettings(AppSettings settings) async {
+    final document = _userDocument();
+    if (document == null) return;
+
+    _cachedSettings = settings;
+    _settingsUserId = FirebaseAuth.instance.currentUser?.uid;
+    await document.set({
+      'settings': settings.toJson(),
+      'settingsUpdatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  static Future<void> resetAppSettings() async {
+    await saveAppSettings(const AppSettings());
+  }
+
+  static Future<String> loadProfilePhotoUrl() async {
+    final authPhotoUrl = FirebaseAuth.instance.currentUser?.photoURL?.trim();
+    if (authPhotoUrl != null && authPhotoUrl.isNotEmpty) return authPhotoUrl;
+
+    final document = _userDocument();
+    if (document == null) return '';
+
+    try {
+      final snapshot = await document.get();
+      return (snapshot.data()?['photoUrl'] as String? ?? '').trim();
+    } on FirebaseException {
+      return '';
+    }
+  }
+
+  static void clearCachedSettings() {
+    _cachedSettings = null;
+    _settingsUserId = null;
+  }
+
+  static Future<String> updateProfilePhoto(XFile file) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final document = _userDocument();
+    if (user == null || document == null) {
+      throw Exception('Please sign in before updating your profile photo.');
+    }
+
+    final bytes = await file.readAsBytes();
+    final ref = FirebaseStorage.instance.ref(
+      'profile_images/${user.uid}/avatar.jpg',
+    );
+    final task = await ref.putData(
+      bytes,
+      SettableMetadata(contentType: file.mimeType ?? 'image/jpeg'),
+    );
+    final photoUrl = await task.ref.getDownloadURL();
+
+    await user.updatePhotoURL(photoUrl);
+    await user.reload();
+    await document.set({
+      'displayName': user.displayName,
+      'email': user.email,
+      'photoUrl': photoUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    return photoUrl;
   }
 }

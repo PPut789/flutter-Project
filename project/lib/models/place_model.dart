@@ -1,4 +1,6 @@
 class Place {
+  final String documentId;
+  final int? sourceRow;
   final String id;
   final String name;
   final String nameEn;
@@ -19,6 +21,8 @@ class Place {
   final List<String> tags;
 
   Place({
+    this.documentId = '',
+    this.sourceRow,
     required this.id,
     required this.name,
     required this.nameEn,
@@ -41,6 +45,8 @@ class Place {
 
   factory Place.fromJson(Map<String, dynamic> json) {
     return Place(
+      documentId: json['documentId'] as String? ?? '',
+      sourceRow: (json['sourceRow'] as num?)?.toInt(),
       id: json['id'] as String? ?? '',
       name: json['nameTh'] as String? ?? '',
       nameEn: json['nameEn'] as String? ?? '',
@@ -65,6 +71,8 @@ class Place {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'documentId': documentId,
+      'sourceRow': sourceRow,
       'nameTh': name,
       'nameEn': nameEn,
       'province': province,

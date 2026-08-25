@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../data/history_repository.dart';
 import '../models/place_model.dart';
+import '../utils/app_routes.dart';
+import '../utils/place_media.dart';
+import '../widgets/app_chrome.dart';
+import '../widgets/place_image_placeholder.dart';
 import 'detail_page.dart';
 
 class HistoryPage extends StatelessWidget {
@@ -10,20 +14,12 @@ class HistoryPage extends StatelessWidget {
   Future<void> _clearHistory(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear History'),
-        content: const Text('Remove all places from your viewing history?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Clear'),
-          ),
-        ],
+      builder: (context) => const AppConfirmDialog(
+        icon: Icons.delete_outline_rounded,
+        title: 'ล้างประวัติ?',
+        message: 'ลบสถานที่ทั้งหมดจากประวัติการเข้าชมของคุณ',
+        confirmLabel: 'ล้างประวัติ',
+        isDestructive: true,
       ),
     );
 
@@ -34,54 +30,93 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F3F8),
-      appBar: AppBar(
-        title: const Text('History'),
-        backgroundColor: const Color(0xFFF7F3F8),
-        actions: [
-          IconButton(
-            onPressed: () => _clearHistory(context),
-            icon: const Icon(Icons.delete_outline_rounded),
-            tooltip: 'Clear history',
-          ),
-        ],
-      ),
-      body: StreamBuilder<List<HistoryItem>>(
-        stream: HistoryRepository.watchHistory(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<List<HistoryItem>>(
+                stream: HistoryRepository.watchHistory(),
+                builder: (context, snapshot) {
+                  final items = snapshot.data ?? const <HistoryItem>[];
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Cannot load history: ${snapshot.error}',
-                  textAlign: TextAlign.center,
-                ),
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Column(
+                      children: [
+                        MinimalHeader(title: 'ประวัติการเข้าชม'),
+                        Expanded(
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      ],
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Column(
+                      children: [
+                        const MinimalHeader(title: 'ประวัติการเข้าชม'),
+                        Expanded(
+                          child: EmptyStateCard(
+                            icon: Icons.error_outline,
+                            title: 'โหลดประวัติไม่ได้',
+                            message: '${snapshot.error}',
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  if (items.isEmpty) {
+                    return const Column(
+                      children: [
+                        MinimalHeader(title: 'ประวัติการเข้าชม'),
+                        Expanded(
+                          child: EmptyStateCard(
+                            icon: Icons.history_rounded,
+                            title: 'ยังไม่มีประวัติการเข้าชม',
+                            message: 'สถานที่ที่คุณเปิดดูจะแสดงอยู่ที่นี่',
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      MinimalHeader(
+                        title: 'ประวัติการเข้าชม',
+                        actions: [
+                          IconButton(
+                            tooltip: 'ล้างประวัติ',
+                            onPressed: () => _clearHistory(context),
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Expanded(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                          itemCount: items.length + 1,
+                          separatorBuilder: (context, index) =>
+                              const Divider(color: appBorder, height: 1),
+                          itemBuilder: (context, index) {
+                            if (index == 0) {
+                              return _HistorySummary(count: items.length);
+                            }
+                            return _HistoryTile(item: items[index - 1]);
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            );
-          }
-
-          final items = snapshot.data ?? const [];
-          if (items.isEmpty) {
-            return const _EmptyHistoryState();
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
-            itemCount: items.length + 1,
-            separatorBuilder: (context, index) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _HistorySummary(count: items.length);
-              }
-              return _HistoryTile(item: items[index - 1]);
-            },
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -94,84 +129,23 @@ class _HistorySummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF281634),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.history_rounded, color: Colors.white),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$count viewed places',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                const Text(
-                  'Your most recent unique place views',
-                  style: TextStyle(color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyHistoryState extends StatelessWidget {
-  const _EmptyHistoryState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
+    return Align(
+      alignment: Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.all(24),
-        padding: const EdgeInsets.all(22),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE8E0EC)),
+          color: appPurpleSoft,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: appBorder),
         ),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.travel_explore_rounded,
-              size: 44,
-              color: Color(0xFF710078),
-            ),
-            SizedBox(height: 12),
-            Text(
-              'No history yet',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-            ),
-            SizedBox(height: 6),
-            Text(
-              'Places you view will appear here.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+        child: Text(
+          'เข้าชม $count สถานที่',
+          style: const TextStyle(
+            color: appPurple,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
     );
@@ -187,76 +161,60 @@ class _HistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final place = item.place;
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => DetailPage(place: place)),
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE8E0EC)),
-          ),
-          child: Row(
-            children: [
-              _HistoryImage(place: place),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      place.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+    return InkWell(
+      onTap: () {
+        Navigator.push(context, smoothRoute(DetailPage(place: place)));
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            _HistoryImage(place: place),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    place.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${place.province}, ${place.region}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.black54),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.schedule_rounded,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatViewedAt(item.viewedAt),
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${place.province} • ${place.region}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: appTextMuted),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    _formatViewedAt(item.viewedAt),
+                    style: const TextStyle(color: appTextMuted, fontSize: 12),
+                  ),
+                ],
               ),
-              const Icon(Icons.chevron_right_rounded),
-            ],
-          ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
         ),
       ),
     );
   }
 
   String _formatViewedAt(DateTime? value) {
-    if (value == null) return 'Viewed recently';
-    return 'Viewed ${value.day}/${value.month}/${value.year}';
+    if (value == null) return 'ล่าสุด';
+    final now = DateTime.now();
+    final date = DateTime(value.year, value.month, value.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final difference = today.difference(date).inDays;
+    if (difference == 0) return 'วันนี้';
+    if (difference == 1) return 'เมื่อวาน';
+    return '${value.day}/${value.month}/${value.year}';
   }
 }
 
@@ -267,26 +225,27 @@ class _HistoryImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagePath = place.images.isNotEmpty
-        ? place.images.first
-        : 'assets/images/maya_bay.jpg';
+    final imageCandidates = placeImageCandidates(place);
+    final imagePath = imageCandidates.isNotEmpty ? imageCandidates.first : '';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: imagePath.startsWith('http')
+      child: imagePath.isEmpty
+          ? PlaceImagePlaceholder(placeName: place.name, width: 64, height: 64)
+          : imagePath.startsWith('http')
           ? Image.network(
               imagePath,
-              width: 72,
-              height: 72,
+              width: 64,
+              height: 64,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Image.asset(
-                'assets/images/maya_bay.jpg',
-                width: 72,
-                height: 72,
-                fit: BoxFit.cover,
-              ),
+              errorBuilder: (context, error, stackTrace) =>
+                  PlaceImagePlaceholder(
+                    placeName: place.name,
+                    width: 64,
+                    height: 64,
+                  ),
             )
-          : Image.asset(imagePath, width: 72, height: 72, fit: BoxFit.cover),
+          : Image.asset(imagePath, width: 64, height: 64, fit: BoxFit.cover),
     );
   }
 }

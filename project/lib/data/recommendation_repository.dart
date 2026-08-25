@@ -15,6 +15,8 @@ class RecommendationRepository {
   static Future<List<Place>> recommendPlaces({
     required RecommendationPreferences preferences,
     required List<Place> places,
+    Set<int> excludeSourceRows = const {},
+    List<String> historyKeywords = const [],
   }) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/recommend'),
@@ -25,6 +27,9 @@ class RecommendationRepository {
         'categories': preferences.categories,
         'types': preferences.types,
         'activities': preferences.activities,
+        'keywords': historyKeywords,
+        'exclude_source_rows': excludeSourceRows.toList(),
+        'limit': 120,
       }),
     );
 
@@ -38,15 +43,23 @@ class RecommendationRepository {
     }
 
     final results = json['results'] as List<dynamic>;
+    final placesBySourceRow = <int, Place>{};
+    for (final place in places) {
+      final sourceRow = place.sourceRow;
+      if (sourceRow != null) {
+        placesBySourceRow[sourceRow] = place;
+      }
+    }
+
     final rankedPlaces = <Place>[];
     for (final result in results) {
       if (result is! Map<String, dynamic>) continue;
       final sourceRow = result['sourceRow'];
       if (sourceRow is! int) continue;
 
-      final index = sourceRow - 1;
-      if (index >= 0 && index < places.length) {
-        rankedPlaces.add(places[index]);
+      final place = placesBySourceRow[sourceRow];
+      if (place != null) {
+        rankedPlaces.add(place);
       }
     }
 

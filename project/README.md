@@ -9,6 +9,10 @@ The app loads attraction data from Firebase Cloud Firestore collection
 `attractions` and uses a trained Content-Based KNN model through a FastAPI
 recommendation service.
 
+The video feature uses Firebase Storage and Firestore collection `videos` so
+signed-in users can upload travel videos, link each video to one attraction or
+a Google Maps location, and see shared uploads in the Video feed.
+
 ## Main Structure
 
 ```text

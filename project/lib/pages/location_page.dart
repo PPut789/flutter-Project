@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/recommendation_preferences.dart';
+import '../utils/app_routes.dart';
+import '../widgets/app_chrome.dart';
 import 'interest_page.dart';
 
 class LocationPage extends StatefulWidget {
@@ -77,107 +79,125 @@ class _LocationPageState extends State<LocationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text("Where do you want to go?"),
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Region",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Column(
-                children: provincesByRegion.keys.map((region) {
-                  final isSelected = selectedRegions.contains(region);
-                  final provinceCount = provincesByRegion[region]?.length ?? 0;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _RegionCard(
-                      region: region,
-                      provinceCount: provinceCount,
-                      isSelected: isSelected,
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            selectedRegions.remove(region);
-                            selectedProvinces.removeWhere(
-                              (province) =>
-                                  provincesByRegion[region]?.contains(
-                                    province,
-                                  ) ??
-                                  false,
-                            );
-                          } else {
-                            selectedRegions.add(region);
-                          }
-                        });
-                      },
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 28),
-              const Text(
-                "Province",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                selectedRegions.isEmpty
-                    ? "Select at least one region first."
-                    : "Province is optional. Choose one or more if you want to narrow the results.",
-                style: const TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: visibleProvinces.map((province) {
-                  return FilterChip(
-                    label: Text(province),
-                    selected: selectedProvinces.contains(province),
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          selectedProvinces.add(province);
-                        } else {
-                          selectedProvinces.remove(province);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: canContinue
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => InterestPage(
-                                selectedRegions: selectedRegions,
-                                selectedProvinces: selectedProvinces,
-                                initialPreferences: widget.initialPreferences,
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
-                  child: const Text("Continue"),
+        child: Column(
+          children: [
+            if (widget.initialPreferences != null)
+              const MinimalHeader(title: "เลือกพื้นที่ท่องเที่ยว")
+            else
+              const Padding(
+                padding: EdgeInsets.fromLTRB(28, 24, 20, 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "เลือกพื้นที่ท่องเที่ยว",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                  ),
                 ),
               ),
-            ],
-          ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "ภูมิภาคที่สนใจ",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Column(
+                      children: provincesByRegion.keys.map((region) {
+                        final isSelected = selectedRegions.contains(region);
+                        final provinceCount =
+                            provincesByRegion[region]?.length ?? 0;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _RegionCard(
+                            region: region,
+                            provinceCount: provinceCount,
+                            isSelected: isSelected,
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedRegions.remove(region);
+                                  selectedProvinces.removeWhere(
+                                    (province) =>
+                                        provincesByRegion[region]?.contains(
+                                          province,
+                                        ) ??
+                                        false,
+                                  );
+                                } else {
+                                  selectedRegions.add(region);
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 28),
+                    const Text(
+                      "จังหวัดที่สนใจ",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: visibleProvinces.map((province) {
+                        final isSelected = selectedProvinces.contains(province);
+                        return SizedBox(
+                          width: (MediaQuery.sizeOf(context).width - 64) / 4,
+                          child: _ProvinceChip(
+                            province: province,
+                            isSelected: isSelected,
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedProvinces.remove(province);
+                                } else {
+                                  selectedProvinces.add(province);
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+                    PrimaryActionButton(
+                      label: "ถัดไป",
+                      onPressed: canContinue
+                          ? () {
+                              Navigator.push(
+                                context,
+                                smoothRoute(
+                                  InterestPage(
+                                    selectedRegions: selectedRegions,
+                                    selectedProvinces: selectedProvinces,
+                                    initialPreferences:
+                                        widget.initialPreferences,
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -200,13 +220,11 @@ class _RegionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNorth = region == "ภาคเหนือ";
-    final accentColor = isNorth
-        ? const Color(0xFF2E7D32)
-        : const Color(0xFF0277BD);
+    final accentColor = const Color(0xFF710078);
     final icon = isNorth ? Icons.terrain_outlined : Icons.waves_outlined;
     final subtitle = isNorth
-        ? "Mountains, temples, old towns"
-        : "Beaches, islands, coastal cities";
+        ? "ภูเขา อากาศเย็น วัฒนธรรมล้านนา"
+        : "ทะเล เกาะสวย อาหารรสจัด";
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
@@ -216,9 +234,7 @@ class _RegionCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: isSelected
-              ? accentColor.withValues(alpha: 0.12)
-              : Colors.white,
+          color: isSelected ? const Color(0xFFF8F1FA) : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? accentColor : const Color(0xFFE2DDE7),
@@ -226,9 +242,9 @@ class _RegionCard extends StatelessWidget {
           ),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black12,
-              blurRadius: 10,
-              offset: Offset(0, 5),
+              color: Color(0x0F000000),
+              blurRadius: 8,
+              offset: Offset(0, 3),
             ),
           ],
         ),
@@ -238,7 +254,7 @@ class _RegionCard extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.14),
+                color: const Color(0xFFF4F0F5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: accentColor, size: 30),
@@ -260,33 +276,58 @@ class _RegionCard extends StatelessWidget {
                     subtitle,
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "$provinceCount provinces available",
-                    style: TextStyle(
-                      color: accentColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
                 ],
               ),
             ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: isSelected
-                  ? Icon(
-                      Icons.check_circle,
-                      key: const ValueKey("selected"),
-                      color: accentColor,
-                    )
-                  : const Icon(
-                      Icons.circle_outlined,
-                      key: ValueKey("unselected"),
-                      color: Colors.grey,
-                    ),
-            ),
+            if (isSelected) Icon(Icons.check_circle, color: accentColor),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProvinceChip extends StatelessWidget {
+  final String province;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ProvinceChip({
+    required this.province,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isSelected ? const Color(0xFFF6EDF8) : Colors.white,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          height: 36,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isSelected ? appPurple : appBorder,
+              width: isSelected ? 1.2 : 1,
+            ),
+          ),
+          child: Text(
+            province,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isSelected ? appPurple : Colors.black87,
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+            ),
+          ),
         ),
       ),
     );

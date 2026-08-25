@@ -1,0 +1,11 @@
+folder=010_ถ้ำตลอด
+status=NO_IMAGE
+row=619
+documentId=att_0619_20170214202547101696
+nameTh=ถ้ำตลอด
+province=นครศรีธรรมราช
+region=ภาคใต้
+category=ธรรมชาติ
+type=ถ้ำ
+
+ใส่รูปของสถานที่นี้ในโฟลเดอร์นี้ได้เลย เช่น 1.jpg, 2.jpg, 3.jpg

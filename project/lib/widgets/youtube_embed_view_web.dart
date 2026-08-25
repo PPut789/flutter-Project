@@ -29,7 +29,7 @@ class _YouTubeEmbedViewState extends State<YouTubeEmbedView> {
       final iframe = html.IFrameElement()
         ..src = videoId == null
             ? 'about:blank'
-            : 'https://www.youtube.com/embed/$videoId?playsinline=1&rel=0'
+            : 'https://www.youtube.com/embed/$videoId?playsinline=1&rel=0&autoplay=1'
         ..style.border = '0'
         ..style.width = '100%'
         ..style.height = '100%'

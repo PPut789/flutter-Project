@@ -1,0 +1,11 @@
+folder=001_ดอยป่าคา
+status=NO_IMAGE
+row=73
+documentId=att_0073_20250117121110000
+nameTh=ดอยป่าคา
+province=เชียงใหม่
+region=ภาคเหนือ
+category=ธรรมชาติ
+type=จุดชมวิว
+
+ใส่รูปของสถานที่นี้ในโฟลเดอร์นี้ได้เลย เช่น 1.jpg, 2.jpg, 3.jpg
