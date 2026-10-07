@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
 
-const appPurple = Color(0xFF7B2B83);
-const appPurpleDark = Color(0xFF3B214A);
-const appPurpleSoft = Color(0xFFF8F3FA);
-const appBorder = Color(0xFFE8DDEC);
-const appTextMuted = Color(0xFF766D79);
+const appSky = Color(0xFF7EC8E3);
+const appSkyDark = Color(0xFF2F5872);
+const appSkySoft = Color(0xFFEAF7FF);
+const appBorder = Color(0xFFD7ECF7);
+const appTextMuted = Color(0xFF6B7E8C);
+
+class AppPastelBackground extends StatelessWidget {
+  final Widget? child;
+
+  const AppPastelBackground({super.key, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFFF8FCFF),
+      child: child ?? const SizedBox.expand(),
+    );
+  }
+}
 
 class MinimalHeader extends StatelessWidget {
   final String title;
@@ -119,9 +133,9 @@ class PrimaryActionButton extends StatelessWidget {
       child: FilledButton(
         onPressed: isLoading ? null : onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: appPurple,
+          backgroundColor: appSky,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFFD8C7DC),
+          disabledBackgroundColor: const Color(0xFFFFF3C4),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: const TextStyle(fontWeight: FontWeight.w900),
         ),
@@ -161,10 +175,10 @@ class EmptyStateCard extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: appPurple.withValues(alpha: 0.08),
+                color: appSky.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: appPurple, size: 31),
+              child: Icon(icon, color: appSky, size: 31),
             ),
             const SizedBox(height: 16),
             Text(
@@ -213,7 +227,7 @@ class AppConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final confirmColor = isDestructive ? Colors.redAccent : appPurple;
+    final confirmColor = isDestructive ? Colors.redAccent : appSky;
 
     return Dialog(
       elevation: 0,
@@ -222,7 +236,7 @@ class AppConfirmDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF9FF),
+          color: const Color(0xFFF8FCFF),
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
@@ -266,7 +280,7 @@ class AppConfirmDialog extends StatelessWidget {
                   child: TextButton(
                     onPressed: () => Navigator.pop(context, false),
                     style: TextButton.styleFrom(
-                      foregroundColor: appPurple,
+                      foregroundColor: appSky,
                       textStyle: const TextStyle(fontWeight: FontWeight.w900),
                     ),
                     child: Text(cancelLabel),

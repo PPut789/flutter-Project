@@ -1,0 +1,474 @@
+ARCHITECTURE AUDIT FOR CLAUDE
+TravelRecommendation / Flutter lib/pages review
+
+Purpose
+=======
+
+This report follows the architecture principles from Claude:
+
+- pages/ should remain UI layer only.
+- data/ should contain repositories and business services.
+- models/ should stay as data classes.
+- widgets/ should stay reusable UI.
+- utils/ should contain generic helpers only, not domain scoring.
+
+This report only audits and recommends. No refactor has been applied yet.
+
+
+Line Counts: lib/pages/*.dart
+=============================
+
+1282  lib/pages/home_page.dart
+ 878  lib/pages/login_page.dart
+ 771  lib/pages/detail_page.dart
+ 641  lib/pages/my_videos_page.dart
+ 543  lib/pages/register_page.dart
+ 526  lib/pages/tiktok_page.dart
+ 509  lib/pages/location_page.dart
+ 470  lib/pages/upload_video_page.dart
+ 415  lib/pages/interest_page.dart
+ 347  lib/pages/profile_page.dart
+ 251  lib/pages/settings_page.dart
+ 230  lib/pages/history_page.dart
+ 140  lib/pages/start_page.dart
+ 105  lib/pages/about_app_page.dart
+
+
+High Priority Refactor Candidates
+=================================
+
+1) lib/pages/home_page.dart
+---------------------------
+
+Status: definite fat page.
+
+Problems found:
+
+- Business recommendation fallback lives inside the page:
+  - _fallbackRecommendation(...) around line 308
+  - _scorePlace(...) around line 380
+  - _ScoredPlace helper around line 1338
+
+- Search matching and ranking lives inside the page:
+  - _displayPlaces(...) around line 283
+  - _normalizeSearchText(...) around line 340
+  - _matchesSearch(...) around line 344
+  - _searchRank(...) around line 348
+  - _searchFields(...) around line 359
+
+- Recommendation rotation/key logic lives inside the page:
+  - _rotateRecommendationOrder(...) around line 258
+  - _recommendationKey(...) around line 271
+  - static _recommendationOffsets and _recommendationRotationStep near top of state class
+
+Recommended extraction:
+
+- Create lib/data/local_recommendation_service.dart
+  - Move local fallback scoring/filtering into it.
+  - Suggested public method:
+    LocalRecommendationService.recommendFallback({
+      required List<Place> places,
+      required RecommendationPreferences preferences,
+      required HistoryPreferenceBoost historyBoost,
+    })
+
+- Create lib/data/place_search_service.dart
+  - Move search normalization, matching, and ranking into it.
+  - This is domain search, not generic utils, so data/service layer is better than utils/.
+  - Suggested public method:
+    PlaceSearchService.search(List<Place> places, String query)
+
+- Create lib/data/recommendation_rotation_service.dart or keep as private service inside local_recommendation_service.dart
+  - Move rotation offset/key logic if it remains product behavior.
+  - If rotation is purely UI variety, it may remain in HomePage, but currently it is recommendation ordering behavior and should be testable.
+
+Expected HomePage after refactor:
+
+- Loads data from PlaceRepository, HistoryRepository, RecommendationRepository.
+- Delegates fallback scoring to LocalRecommendationService.
+- Delegates search to PlaceSearchService.
+- Keeps only UI state, navigation, and widget build.
+
+
+2) lib/pages/upload_video_page.dart
+-----------------------------------
+
+Status: medium refactor candidate.
+
+Problems found:
+
+- Place search/filtering logic is embedded in the page:
+  - _filterPlaces(...) around line 96
+  - _normalize(...) around line 118
+
+Why it matters:
+
+- This duplicates the same domain search idea as HomePage.
+- Search behavior will diverge between Home search and Upload Video place picker.
+- The user already wants fuzzy/near-match search, so a shared place search service should be used here too.
+
+Recommended extraction:
+
+- Reuse lib/data/place_search_service.dart
+  - UploadVideoPage can call PlaceSearchService.search(...).take(20)
+  - Keep selectedPlace/canUpload/UI state in the page.
+
+
+3) lib/pages/login_page.dart
+----------------------------
+
+Status: medium refactor candidate, but not urgent.
+
+Problems found:
+
+- Auth workflow is implemented directly in the page:
+  - _signIn(...) around line 35
+  - _signInWithGoogle(...) around line 81
+  - _createGoogleCredential(...) around line 127
+  - _initializeGoogleSignIn(...) around line 153
+  - _resetPassword(...) around line 157
+  - _authErrorText(...) around line 180
+  - _googleSignInErrorText(...) around line 195
+
+Why it matters:
+
+- This is not Firestore/http business logic, but it is authentication/service logic.
+- The page currently owns FirebaseAuth and GoogleSignIn flow directly.
+- It is testable without widgets if moved out.
+
+Recommended extraction:
+
+- Create lib/data/auth_repository.dart
+  - signInWithEmail(email, password)
+  - signInWithGoogle()
+  - sendPasswordResetEmail(email)
+  - authErrorText(...) or a separate AuthErrorMapper
+
+Refactor priority:
+
+- Lower than HomePage because Google Login was recently fixed and should not be disturbed until tested on device.
+- If refactored, preserve google_sign_in v7 API behavior.
+
+
+4) lib/pages/register_page.dart
+-------------------------------
+
+Status: medium refactor candidate, lower priority than login.
+
+Problems found:
+
+- Registration validation and FirebaseAuth create user are in the page:
+  - _signUp(...) around line 33
+  - _authErrorText(...) around line 89
+
+Recommended extraction:
+
+- Reuse lib/data/auth_repository.dart
+  - registerWithEmail(email, username, password)
+  - map FirebaseAuthException to user-facing text
+
+Potential functional concern:
+
+- RegisterPage currently calls createUserWithEmailAndPassword and updateDisplayName, then navigates to LocationPage.
+- Unlike Google login, it does not visibly call UserRepository.ensureUserProfile().
+- This may be okay if preference saving later creates/merges users/{uid}, but it should be checked when working on auth cleanup.
+
+
+5) lib/pages/location_page.dart
+-------------------------------
+
+Status: small domain-data extraction candidate.
+
+Problems found:
+
+- Region/province master data is hardcoded inside the page:
+  - provincesByRegion map near line 17
+  - visibleProvinces getter around line 70
+
+Why it matters:
+
+- This is domain reference data, not UI layout.
+- It may also be needed by admin/report/KNN explanations.
+
+Recommended extraction:
+
+- Create lib/data/travel_taxonomy.dart or lib/models/travel_taxonomy.dart
+  - provincesByRegion
+  - allRegions
+  - visibleProvincesForRegions(...)
+
+Refactor priority:
+
+- Low to medium.
+- Safe to do after HomePage search/scoring refactor.
+
+
+6) lib/pages/interest_page.dart
+-------------------------------
+
+Status: small domain-data extraction candidate.
+
+Problems found:
+
+- Category/type/activity options are hardcoded in the page:
+  - categories around line 26
+  - types around line 34
+  - activities around line 56
+
+- Mapping preference values to icons is embedded in the page:
+  - _categoryIcon(...) around line 251
+  - _typeIcon(...) around line 257
+  - _activityIcon(...) around line 278
+
+Recommended extraction:
+
+- Create/reuse lib/data/travel_taxonomy.dart for option lists.
+- Create lib/widgets/preference_icon_mapper.dart or keep icon mapper in page if it is considered pure UI presentation.
+
+Refactor priority:
+
+- Low.
+- The option lists are domain data, but the icon mapping is arguably UI concern and can remain unless reused elsewhere.
+
+
+Medium / Low Priority Review Items
+==================================
+
+7) lib/pages/detail_page.dart
+-----------------------------
+
+Status: mostly UI, with one helper that could move.
+
+Problems found:
+
+- Google Maps URL construction is inside the page:
+  - _openGoogleMaps(...) around line 305
+
+Recommended extraction:
+
+- Create lib/utils/maps_launcher.dart or lib/data/place_navigation_service.dart
+  - buildPlaceMapsUri(Place place)
+  - openPlaceInMaps(context/place) if keeping launchUrl outside UI is desired
+
+Refactor priority:
+
+- Low.
+- This is not heavy business logic, but moving URI creation would reduce duplication with video pages.
+
+
+8) lib/pages/tiktok_page.dart
+-----------------------------
+
+Status: mostly UI/video presentation, with a few service/navigation candidates.
+
+Problems found:
+
+- Finds linked place by looping over places:
+  - _linkedPlace getter around line 120
+
+- Checks current user ownership directly:
+  - FirebaseAuth.instance.currentUser around line 135
+
+- Opens Google Maps URL directly:
+  - _openMaps(...) around line 386
+
+- Deletes video through repository from widget menu:
+  - _deleteVideo(...) around line 457
+
+Recommended extraction:
+
+- Build a small helper/service only if the same logic is needed in MyVideosPage:
+  - VideoPlaceResolver.findLinkedPlace(video, places)
+  - MapsLauncher.openUrl(video.googleMapsUrl)
+
+Refactor priority:
+
+- Low to medium.
+- Current repository usage is acceptable; the page is not doing Firestore directly.
+- Deletion confirmation is UI concern, actual delete is already in VideoRepository.
+
+
+9) lib/pages/my_videos_page.dart
+--------------------------------
+
+Status: mostly UI/video presentation, duplicates some TikTok page logic.
+
+Problems found:
+
+- Opens Google Maps URL directly:
+  - _openMaps(...) around line 538
+
+- Deletes video through repository from widget menu:
+  - _deleteVideo(...) around line 652
+
+- Contains repeated video surface/gradient/action widgets that resemble tiktok_page.dart.
+
+Recommended extraction:
+
+- Consider shared widgets for:
+  - video surface
+  - video gradient
+  - round action button
+  - video summary
+
+- Consider shared helper:
+  - MapsLauncher.openUrl(...)
+
+Refactor priority:
+
+- Low.
+- Mostly UI duplication, not business logic.
+
+
+10) lib/pages/profile_page.dart
+-------------------------------
+
+Status: acceptable for now.
+
+Problems found:
+
+- Direct FirebaseAuth usage:
+  - signOut around line 73
+  - currentUser around line 113
+
+Recommended extraction:
+
+- If AuthRepository is created, profile logout/current user can use it.
+
+Refactor priority:
+
+- Low.
+- Profile photo upload is already delegated to UserRepository.updateProfilePhoto().
+
+
+11) lib/pages/settings_page.dart
+--------------------------------
+
+Status: acceptable.
+
+Problems found:
+
+- Calls UserRepository and HistoryRepository from UI:
+  - load/save settings
+  - clear history
+
+This is acceptable because the page delegates persistence to repositories.
+
+Refactor priority:
+
+- Low.
+
+
+12) lib/pages/history_page.dart
+-------------------------------
+
+Status: acceptable.
+
+Problems found:
+
+- Calls HistoryRepository.watchHistory() and clearHistory().
+
+This is acceptable because the page delegates data operations to repository.
+
+Refactor priority:
+
+- Low.
+
+
+13) lib/pages/start_page.dart
+-----------------------------
+
+Status: acceptable.
+
+No business logic found. Mostly navigation and UI.
+
+
+14) lib/pages/about_app_page.dart
+---------------------------------
+
+Status: acceptable.
+
+No business logic found. Mostly static UI/content.
+
+
+Recommended Refactor Order
+==========================
+
+Do not refactor everything at once. Suggested order:
+
+1. HomePage recommendation fallback service
+   - Create lib/data/local_recommendation_service.dart
+   - Move _fallbackRecommendation, _scorePlace, _ScoredPlace
+   - Add unit tests for scoring behavior
+
+2. Shared place search service
+   - Create lib/data/place_search_service.dart
+   - Move HomePage search matching/ranking
+   - Reuse it in UploadVideoPage
+   - Add fuzzy matching here later
+
+3. Optional recommendation rotation service
+   - Move only if the team agrees rotation is recommendation behavior, not UI presentation
+
+4. Auth repository
+   - Create lib/data/auth_repository.dart
+   - Move email login, Google login, reset password, register
+   - Do this after Google Login is tested on device
+
+5. Travel taxonomy
+   - Create lib/data/travel_taxonomy.dart
+   - Move region/province/category/type/activity lists
+
+6. Shared maps/video UI helpers
+   - Extract only if duplication starts slowing changes
+
+
+Suggested Files To Create
+=========================
+
+lib/data/local_recommendation_service.dart
+  For fallback scoring/ranking/filtering by preference and history boost.
+
+lib/data/place_search_service.dart
+  For place search normalization, fuzzy matching, and ranking.
+
+lib/data/auth_repository.dart
+  For FirebaseAuth/GoogleSignIn email login, Google login, register, reset password.
+
+lib/data/travel_taxonomy.dart
+  For regions, provinces, categories, types, activities.
+
+lib/utils/maps_launcher.dart
+  Optional. For Google Maps URL building/opening shared by Detail, TikTok, MyVideos.
+
+
+Key Caution
+===========
+
+- Google Login was just fixed by updating android/app/google-services.json with oauth_client values from Firebase config.
+- Avoid refactoring Google Sign-In logic until it has been tested on a physical device/emulator.
+- Do not expose Firebase config files or API keys in handoff files.
+- Do not re-enable Places API / Places API (New) unless the user explicitly asks, because it previously caused high billing.
+
+
+Conclusion
+==========
+
+The main architecture problem is real and concentrated in lib/pages/home_page.dart.
+The next most useful cleanup is shared place search because both HomePage and
+UploadVideoPage implement place matching inside UI state classes.
+
+Recommended first confirmed task:
+
+Refactor HomePage local fallback scoring into:
+
+  lib/data/local_recommendation_service.dart
+
+Then refactor search into:
+
+  lib/data/place_search_service.dart
+
+After that, run:
+
+  flutter analyze
+  flutter test

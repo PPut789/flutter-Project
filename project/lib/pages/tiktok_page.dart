@@ -542,13 +542,13 @@ class _UploaderAvatar extends StatelessWidget {
       backgroundColor: Colors.white,
       child: CircleAvatar(
         radius: 10,
-        backgroundColor: const Color(0xFFEEDCF2),
+        backgroundColor: const Color(0xFFEAF7FF),
         backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
         child: photoUrl.isEmpty
             ? Text(
                 name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
                 style: const TextStyle(
-                  color: Color(0xFF710078),
+                  color: Color(0xFF7EC8E3),
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                 ),

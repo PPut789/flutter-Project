@@ -5,7 +5,7 @@ import '../models/place_model.dart';
 import '../utils/app_routes.dart';
 import '../utils/place_media.dart';
 import '../widgets/app_chrome.dart';
-import '../widgets/place_image_placeholder.dart';
+import '../widgets/resolved_place_image.dart';
 import 'detail_page.dart';
 
 class HistoryPage extends StatelessWidget {
@@ -30,92 +30,94 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FCFF),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: StreamBuilder<List<HistoryItem>>(
-                stream: HistoryRepository.watchHistory(),
-                builder: (context, snapshot) {
-                  final items = snapshot.data ?? const <HistoryItem>[];
+        child: AppPastelBackground(
+          child: Column(
+            children: [
+              Expanded(
+                child: StreamBuilder<List<HistoryItem>>(
+                  stream: HistoryRepository.watchHistory(),
+                  builder: (context, snapshot) {
+                    final items = snapshot.data ?? const <HistoryItem>[];
 
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Column(
-                      children: [
-                        MinimalHeader(title: 'ประวัติการเข้าชม'),
-                        Expanded(
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      ],
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Column(
-                      children: [
-                        const MinimalHeader(title: 'ประวัติการเข้าชม'),
-                        Expanded(
-                          child: EmptyStateCard(
-                            icon: Icons.error_outline,
-                            title: 'โหลดประวัติไม่ได้',
-                            message: '${snapshot.error}',
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Column(
+                        children: [
+                          MinimalHeader(title: 'ประวัติการเข้าชม'),
+                          Expanded(
+                            child: Center(child: CircularProgressIndicator()),
                           ),
-                        ),
-                      ],
-                    );
-                  }
+                        ],
+                      );
+                    }
 
-                  if (items.isEmpty) {
-                    return const Column(
-                      children: [
-                        MinimalHeader(title: 'ประวัติการเข้าชม'),
-                        Expanded(
-                          child: EmptyStateCard(
-                            icon: Icons.history_rounded,
-                            title: 'ยังไม่มีประวัติการเข้าชม',
-                            message: 'สถานที่ที่คุณเปิดดูจะแสดงอยู่ที่นี่',
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return Column(
-                    children: [
-                      MinimalHeader(
-                        title: 'ประวัติการเข้าชม',
-                        actions: [
-                          IconButton(
-                            tooltip: 'ล้างประวัติ',
-                            onPressed: () => _clearHistory(context),
-                            icon: const Icon(
-                              Icons.delete_outline_rounded,
-                              color: Colors.redAccent,
+                    if (snapshot.hasError) {
+                      return Column(
+                        children: [
+                          const MinimalHeader(title: 'ประวัติการเข้าชม'),
+                          Expanded(
+                            child: EmptyStateCard(
+                              icon: Icons.error_outline,
+                              title: 'โหลดประวัติไม่ได้',
+                              message: '${snapshot.error}',
                             ),
                           ),
                         ],
-                      ),
-                      Expanded(
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                          itemCount: items.length + 1,
-                          separatorBuilder: (context, index) =>
-                              const Divider(color: appBorder, height: 1),
-                          itemBuilder: (context, index) {
-                            if (index == 0) {
-                              return _HistorySummary(count: items.length);
-                            }
-                            return _HistoryTile(item: items[index - 1]);
-                          },
+                      );
+                    }
+
+                    if (items.isEmpty) {
+                      return const Column(
+                        children: [
+                          MinimalHeader(title: 'ประวัติการเข้าชม'),
+                          Expanded(
+                            child: EmptyStateCard(
+                              icon: Icons.history_rounded,
+                              title: 'ยังไม่มีประวัติการเข้าชม',
+                              message: 'สถานที่ที่คุณเปิดดูจะแสดงอยู่ที่นี่',
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Column(
+                      children: [
+                        MinimalHeader(
+                          title: 'ประวัติการเข้าชม',
+                          actions: [
+                            IconButton(
+                              tooltip: 'ล้างประวัติ',
+                              onPressed: () => _clearHistory(context),
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.redAccent,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  );
-                },
+                        Expanded(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                            itemCount: items.length + 1,
+                            separatorBuilder: (context, index) =>
+                                const Divider(color: appBorder, height: 1),
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                return _HistorySummary(count: items.length);
+                              }
+                              return _HistoryTile(item: items[index - 1]);
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -135,14 +137,14 @@ class _HistorySummary extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: appPurpleSoft,
+          color: appSkySoft,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: appBorder),
         ),
         child: Text(
           'เข้าชม $count สถานที่',
           style: const TextStyle(
-            color: appPurple,
+            color: appSky,
             fontSize: 12,
             fontWeight: FontWeight.w800,
           ),
@@ -230,22 +232,12 @@ class _HistoryImage extends StatelessWidget {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: imagePath.isEmpty
-          ? PlaceImagePlaceholder(placeName: place.name, width: 64, height: 64)
-          : imagePath.startsWith('http')
-          ? Image.network(
-              imagePath,
-              width: 64,
-              height: 64,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  PlaceImagePlaceholder(
-                    placeName: place.name,
-                    width: 64,
-                    height: 64,
-                  ),
-            )
-          : Image.asset(imagePath, width: 64, height: 64, fit: BoxFit.cover),
+      child: ResolvedPlaceImage(
+        imagePath: imagePath,
+        placeName: place.name,
+        width: 64,
+        height: 64,
+      ),
     );
   }
 }

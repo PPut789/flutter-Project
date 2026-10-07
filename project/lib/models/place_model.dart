@@ -17,6 +17,7 @@ class Place {
   final List<String> youtubeUrls;
   final List<String> tiktokUrls;
   final List<String> videoUrls;
+  final List<String> assetImages;
   final List<String> images;
   final List<String> tags;
 
@@ -39,6 +40,7 @@ class Place {
     required this.youtubeUrls,
     required this.tiktokUrls,
     required this.videoUrls,
+    this.assetImages = const [],
     required this.images,
     required this.tags,
   });
@@ -63,6 +65,7 @@ class Place {
       youtubeUrls: List<String>.from(json['youtubeUrls'] as List? ?? const []),
       tiktokUrls: List<String>.from(json['tiktokUrls'] as List? ?? const []),
       videoUrls: List<String>.from(json['videoUrls'] as List? ?? const []),
+      assetImages: List<String>.from(json['assetImages'] as List? ?? const []),
       images: List<String>.from(json['images'] as List? ?? const []),
       tags: List<String>.from(json['tags'] as List? ?? const []),
     );
@@ -88,6 +91,7 @@ class Place {
       'youtubeUrls': youtubeUrls,
       'tiktokUrls': tiktokUrls,
       'videoUrls': videoUrls,
+      'assetImages': assetImages,
       'images': images,
       'tags': tags,
     };

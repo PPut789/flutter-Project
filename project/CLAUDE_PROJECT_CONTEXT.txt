@@ -1,0 +1,567 @@
+PROJECT CONTEXT FOR CLAUDE
+TravelRecommendation / Flutter + Firebase + FastAPI KNN
+
+โปรเจกต์นี้คืออะไร
+====================
+
+TravelRecommendation เป็นโปรเจกต์โครงงานระบบแนะนำสถานที่ท่องเที่ยวในประเทศไทย
+โดยมี 3 ส่วนหลัก:
+
+1. Mobile App
+   - สร้างด้วย Flutter / Dart
+   - ผู้ใช้สมัครสมาชิกหรือเข้าสู่ระบบ
+   - เลือก preference เช่น ภาค จังหวัด หมวดหมู่ ประเภทสถานที่ และกิจกรรม
+   - แอปแสดงสถานที่แนะนำจาก Firestore
+   - มีหน้า detail, history, video feed, upload video, profile, settings
+
+2. Recommendation Backend
+   - สร้างด้วย FastAPI / Python
+   - โหลดโมเดล KNN จากไฟล์ .pkl
+   - ใช้แนวคิด Content-Based Recommendation
+   - ใช้ One-hot + TF-IDF + weighted cosine similarity
+   - Flutter สามารถเรียก backend เพื่อจัดอันดับสถานที่แนะนำ
+   - ถ้า backend ใช้งานไม่ได้ Flutter มี local fallback scoring
+
+3. Firebase
+   - Firebase Auth ใช้จัดการ login/register
+   - Cloud Firestore เก็บข้อมูลสถานที่, users, history, videos
+   - Firebase Storage เก็บรูปสถานที่, รูปโปรไฟล์, วิดีโอ user-uploaded
+   - รูปภาพ/วิดีโอในแอปไม่ได้ฝังใน APK เป็นหลัก แต่โหลดจาก Firebase Storage URL
+
+
+สถานะล่าสุดที่ควรรู้
+====================
+
+- Firebase project: travelrecommendation-851e9
+- Storage bucket: travelrecommendation-851e9.firebasestorage.app
+- Firestore collection หลัก: attractions
+- มีข้อมูลสถานที่ประมาณ 2,994 documents
+- Billing ของ Google Cloud เคยถูกปิด/ค้างจ่าย ทำให้ Firebase Storage ใช้ไม่ได้
+- ผู้ใช้จ่ายเงินแล้ว และ Storage กลับมาใช้งานได้
+- ห้ามเปิด Places API / Places API (New) กลับมาโดยไม่จำเป็น เพราะเคยทำให้เกิดค่าใช้จ่ายสูง
+- Google Login เพิ่งแก้ล่าสุดโดยอัปเดต android/app/google-services.json ให้มี oauth_client จาก Firebase config ล่าสุด
+- flutter analyze เฉพาะ lib/pages/login_page.dart ผ่าน
+- flutter build apk --debug ผ่านหลังอัปเดต google-services.json
+
+หมายเหตุสำคัญ:
+- PROJECT_STATUS.md และ CODEX_HANDOFF.md มีบางส่วนที่อาจล้าสมัย โดยเฉพาะสถานะ Auth/KNN
+- ให้เช็กโค้ดจริงและ backend/README.md เป็นหลักก่อนแก้ต่อ
+
+
+โครงสร้างโปรเจกต์หลัก
+====================
+
+C:\flutter\flutter-Project\project
+
+lib/
+  main.dart
+  firebase_options.dart
+  pages/
+  data/
+  models/
+  widgets/
+  utils/
+
+backend/
+  main.py
+  requirements.txt
+  README.md
+  models/
+
+android/
+  app/
+    google-services.json
+    build.gradle.kts
+    src/main/
+
+assets/
+  backgrounds/
+  images/
+  logos/
+  video/
+
+dataset/
+  attractions.json
+  #5 finish_attraction_enriched.xlsx
+  analytics/
+  model_results/
+  remaining_place_images/
+  youtube/
+
+tools/
+notebooks/
+diagrams/
+
+firebase.json
+firestore.rules
+storage.rules
+pubspec.yaml
+pubspec.lock
+
+
+ไฟล์ Flutter สำคัญ
+=================
+
+lib/main.dart
+-------------
+Entry point ของแอป Flutter
+- เรียก Firebase.initializeApp()
+- ตั้งค่า Theme หลัก
+- ใช้ _AuthGate ตรวจ Firebase Auth state
+- ถ้ายังไม่ login ไป StartPage
+- ถ้า login แล้ว แต่ยังไม่มี preference ไป LocationPage
+- ถ้ามี preference แล้วไป HomePage
+
+lib/firebase_options.dart
+-------------------------
+ไฟล์ config Firebase ที่ FlutterFire CLI generate ให้
+- เก็บ apiKey, appId, projectId, storageBucket ของแต่ละ platform
+- ใช้ตอน Firebase.initializeApp()
+
+lib/pages/start_page.dart
+-------------------------
+หน้าเริ่มต้นของแอป
+- มีปุ่มไป Register และ Login
+- ใช้ assets/backgrounds/start_background.png
+
+lib/pages/login_page.dart
+-------------------------
+หน้าเข้าสู่ระบบ
+- Email/password login ผ่าน FirebaseAuth.signInWithEmailAndPassword()
+- Google login ผ่าน google_sign_in v7 และ FirebaseAuth.signInWithCredential()
+- Forgot password ผ่าน sendPasswordResetEmail()
+- หลัง login สำเร็จโหลด preference จาก UserRepository แล้วนำทางไป LocationPage หรือ HomePage
+- ล่าสุด Google Login แก้ด้าน config แล้ว แต่ควรทดสอบบนมือถือจริงอีกครั้ง
+
+lib/pages/register_page.dart
+----------------------------
+หน้าสมัครสมาชิก
+- สมัครผ่าน Firebase Auth
+- สร้าง/บันทึกข้อมูล user ใน Firestore
+- หลังสมัครจะไป flow เลือก preference
+
+lib/pages/location_page.dart
+----------------------------
+หน้าเลือกภาค/จังหวัด
+- ผู้ใช้เลือก region และ province
+- จังหวัดเป็น optional
+- ส่งต่อไป InterestPage เพื่อเลือกความสนใจ
+
+lib/pages/interest_page.dart
+----------------------------
+หน้าเลือกความสนใจ
+- เลือก category, type, activity
+- สร้าง RecommendationPreferences
+- บันทึก preference ของ user
+
+lib/pages/home_page.dart
+------------------------
+หน้าแรกหลัง login
+- โหลดสถานที่จาก Firestore ผ่าน PlaceRepository
+- โหลด recommendation จาก RecommendationRepository/backend ถ้ามี
+- ถ้า backend ใช้ไม่ได้ มี local scoring fallback
+- แสดง search bar, recommended places, additional places, bottom navigation
+- ปัญหาที่ยังต้องแก้:
+  - รูปโปรไฟล์ตรง header ไม่ขึ้น
+  - กด profile icon แล้วไม่ไปหน้า Profile
+  - card บางใบ overflow ด้านล่าง
+  - search ยังควรทำให้ fuzzy/near-match ดีขึ้น
+
+lib/pages/detail_page.dart
+--------------------------
+หน้ารายละเอียดสถานที่
+- แสดงรูปหลายรูปจาก place.images
+- แสดง description, highlight, location
+- เปิด Google Maps ผ่าน url_launcher
+- แสดง YouTube/video URL ถ้ามี
+- บันทึก history เมื่อผู้ใช้เข้าดูสถานที่
+
+lib/pages/history_page.dart
+---------------------------
+หน้าประวัติการดู
+- โหลด history ของ user
+- ใช้ข้อมูลจาก Firestore เพื่อแสดงสถานที่ที่เคยดู
+- เกี่ยวข้องกับ KNN เพราะ recommendation ควร exclude สถานที่ที่เคยดูแล้ว
+
+lib/pages/tiktok_page.dart
+--------------------------
+หน้า video feed
+- แสดงวิดีโอที่ user อัปโหลด
+- โหลดข้อมูลจาก VideoRepository
+- ใช้ video_player / YouTube embed helpers ตามชนิดสื่อ
+
+lib/pages/upload_video_page.dart
+-------------------------------
+หน้าอัปโหลดวิดีโอ
+- ผู้ใช้เลือกวิดีโอจากเครื่อง/มือถือ
+- เลือกสถานที่จาก dataset หรือกรอก Google Maps link
+- อัปโหลดวิดีโอไป Firebase Storage
+- สร้าง document ใน Firestore collection videos
+
+lib/pages/my_videos_page.dart
+-----------------------------
+หน้าจัดการวิดีโอของผู้ใช้
+- แสดงวิดีโอที่ผู้ใช้เคยอัปโหลด
+- มี flow แก้ไข/ลบวิดีโอ
+
+lib/pages/profile_page.dart
+---------------------------
+หน้าโปรไฟล์
+- แสดงข้อมูลผู้ใช้
+- อัปโหลด/เปลี่ยนรูปโปรไฟล์
+- รูปโปรไฟล์เก็บใน Firebase Storage path profile_images/{uid}/avatar.jpg
+- URL รูปถูกเก็บใน users/{uid}.photoUrl และ FirebaseAuth user.photoURL
+
+lib/pages/settings_page.dart
+----------------------------
+หน้าตั้งค่า
+- ตั้งค่า history on/off
+- clear history
+- อาจมี setting อื่น ๆ ที่เกี่ยวกับ user preference
+
+lib/pages/about_app_page.dart
+-----------------------------
+หน้าเกี่ยวกับแอป
+- ใช้สำหรับข้อมูลโครงงาน/คำอธิบายแอป
+
+
+ไฟล์ data/repository สำคัญ
+=========================
+
+lib/data/user_repository.dart
+-----------------------------
+จัดการข้อมูล user
+- authStateChanges()
+- loadPreferences()
+- savePreferences()
+- ensureUserProfile()
+- loadAppSettings()
+- saveAppSettings()
+- loadProfilePhotoUrl()
+- updateProfilePhoto()
+
+หมายเหตุ:
+- updateProfilePhoto() อัปโหลดไฟล์ไป Firebase Storage แล้วเก็บ download URL ใน Firestore
+- ไม่ได้เก็บ binary image ลง Firestore
+
+lib/data/place_repository.dart
+------------------------------
+โหลดข้อมูลสถานที่จาก Firestore collection attractions
+- แปลง document เป็น Place model
+- ใช้เป็นแหล่งข้อมูลหลักของ Home/Detail/Search
+
+lib/data/recommendation_repository.dart
+---------------------------------------
+เรียก FastAPI recommendation backend
+- ส่ง preference ไป backend
+- รับรายการ sourceRow / score / metadata กลับมา
+- ถ้า backend ไม่พร้อม แอปยัง fallback ได้
+
+lib/data/history_repository.dart
+--------------------------------
+จัดการประวัติการดูสถานที่
+- บันทึก history ของ user
+- โหลด history สำหรับหน้า History
+- ใช้ช่วย exclude สถานที่เดิมในการแนะนำ
+
+lib/data/video_repository.dart
+------------------------------
+จัดการวิดีโอ user-uploaded
+- upload video ไป Firebase Storage
+- สร้าง/แก้/ลบ document ใน Firestore collection videos
+- โหลด video feed และ my videos
+
+
+ไฟล์ model สำคัญ
+================
+
+lib/models/place_model.dart
+---------------------------
+Model ของสถานที่
+field สำคัญ:
+- id
+- nameTh / nameEn
+- description
+- highlight
+- region
+- province
+- district
+- category
+- type
+- activity
+- tags
+- images
+- youtubeUrls / videoUrls
+- latitude / longitude / location
+- sourceRow หรือ identifier ที่ใช้ map กับ KNN result
+
+lib/models/recommendation_preferences.dart
+------------------------------------------
+Model preference ของผู้ใช้
+- regions
+- provinces
+- categories
+- types
+- activities
+- keywords
+
+lib/models/app_settings.dart
+----------------------------
+Model setting ของ user
+- เช่น history enabled/disabled
+
+lib/models/video_post_model.dart
+--------------------------------
+Model ของ video post
+- owner/uploader
+- storage path / video URL
+- attraction id/name
+- createdAt / updatedAt
+- status
+
+
+ไฟล์ widget/util สำคัญ
+=====================
+
+lib/widgets/app_chrome.dart
+---------------------------
+Widget โครง UI ที่ใช้ซ้ำ เช่น app shell/chrome
+
+lib/widgets/auth_background.dart
+--------------------------------
+พื้นหลังของหน้า auth
+
+lib/widgets/place_image_placeholder.dart
+----------------------------------------
+placeholder/fallback เมื่อสถานที่ไม่มีรูปหรือโหลดรูปไม่ได้
+
+lib/widgets/video_manage_sheet.dart
+-----------------------------------
+bottom sheet สำหรับจัดการวิดีโอ เช่น search/edit/delete
+
+lib/widgets/youtube_embed_view*.dart
+------------------------------------
+แยก implementation ของ YouTube embed ตาม platform
+- mobile
+- web
+- stub
+
+lib/utils/app_routes.dart
+-------------------------
+helper route transition เช่น smoothRoute()
+
+lib/utils/place_media.dart
+--------------------------
+helper ตรวจ/จัดการ media URL ของสถานที่ เช่น YouTube URL
+
+
+Backend / KNN
+=============
+
+backend/main.py
+---------------
+FastAPI backend สำหรับ recommendation
+- โหลด backend/models/travel_recommendation_knn_model_v2.pkl
+- มี endpoint GET /health
+- มี endpoint POST /recommend
+- สร้าง user vector จาก preference
+- ใช้ model_with_province ถ้าผู้ใช้เลือกจังหวัด
+- ใช้ model_without_province ถ้าไม่เลือกจังหวัด
+- ใช้ kneighbors() เพื่อหาอันดับสถานที่คล้ายที่สุด
+- ส่งผลกลับให้ Flutter เอาไปจับคู่กับข้อมูลปัจจุบันใน Firestore
+
+backend/requirements.txt
+------------------------
+dependency ของ backend
+- fastapi
+- uvicorn
+- numpy
+- pandas
+- scikit-learn
+- pydantic
+
+backend/README.md
+-----------------
+เอกสารวิธีรัน backend และอธิบาย KNN artifact
+ควรอ่านไฟล์นี้ก่อนแตะ backend
+
+backend/models/travel_recommendation_knn_model_v2.pkl
+------------------------------------------------------
+โมเดล KNN เวอร์ชันปัจจุบัน
+- Content-Based KNN
+- One-hot: region, province, category, type
+- Multi-label: activity
+- TF-IDF: nameTh, nameEn, description, highlight, tags
+- Weight โดยประมาณ:
+  - region 2.0
+  - province 2.5
+  - category 3.0
+  - type 3.0
+  - activity 4.0
+  - text 1.4
+
+backend/models/travel_recommendation_knn_model_v1.pkl
+------------------------------------------------------
+โมเดลเก่า เก็บไว้เป็น reference/backup
+
+
+Firebase / Android config
+=========================
+
+android/app/google-services.json
+--------------------------------
+Firebase Android config
+- ล่าสุดถูกอัปเดตให้มี oauth_client แล้ว
+- สำคัญมากสำหรับ Google Login
+- ถ้า Google Login ยังไม่ได้ ให้ดาวน์โหลด config ล่าสุดจาก Firebase Console หรือใช้ Firebase CLI
+
+android/app/build.gradle.kts
+----------------------------
+Android Gradle config
+- applicationId = com.example.project
+- ใช้ plugin com.google.gms.google-services
+- release ตอนนี้ยังใช้ debug signing config
+
+firestore.rules
+---------------
+Firestore Security Rules
+- ควบคุมสิทธิ์ collection users, attractions, history, videos
+- ต้องตรวจให้ mobile read ได้ และ admin write ได้ถ้าทำ Web Admin
+
+storage.rules
+-------------
+Firebase Storage Rules
+- ควบคุมสิทธิ์ profile_images, user_videos, attraction_images, attraction_videos
+- สำคัญกับ upload profile/video และโหลดรูปสถานที่
+
+firebase.json
+-------------
+Firebase project config สำหรับ deploy rules/hosting ถ้ามี
+
+
+Dataset / Tools / Notebook
+==========================
+
+dataset/attractions.json
+------------------------
+สำเนาข้อมูลสถานที่ในรูป JSON
+ใช้สำหรับ import/migration/tooling
+
+dataset/#5 finish_attraction_enriched.xlsx
+------------------------------------------
+Excel dataset ที่รวมข้อมูล media แล้ว
+
+dataset/model_results/
+----------------------
+ผล evaluation ของ KNN
+- CSV ผลทดสอบ
+- ใช้อ้างอิงในรายงานบท 4
+
+dataset/analytics/
+------------------
+ไฟล์วิเคราะห์ dataset เช่น feature transform table และ summary
+
+dataset/remaining_place_images/
+-------------------------------
+รูปที่เก็บไว้ local สำหรับสถานที่บางส่วน
+ใช้ตอน upload/migrate รูปไป Storage
+
+dataset/youtube/
+----------------
+ไฟล์ batch สำหรับ YouTube URL enrichment
+
+notebooks/travel_recommendation_knn_v2_colab.ipynb
+--------------------------------------------------
+Notebook สำหรับ train/export KNN v2
+ใช้เมื่อจะปรับโมเดลหรือ generate .pkl ใหม่
+
+tools/import_attractions_to_firestore*.mjs
+------------------------------------------
+สคริปต์ import attraction dataset เข้า Firestore
+
+tools/migrate_existing_attraction_images_to_storage.mjs
+-------------------------------------------------------
+สคริปต์ migrate รูปเดิมไป Firebase Storage แล้วอัปเดต URL ใน Firestore
+
+tools/enrich_attraction_images_to_storage.mjs
+---------------------------------------------
+สคริปต์ enrich/upload รูปสถานที่เข้า Storage
+
+tools/upload_remaining_place_images.mjs
+---------------------------------------
+สคริปต์ upload รูป local ที่เหลือใน dataset/remaining_place_images
+
+tools/upload_attraction_video_rest.mjs
+--------------------------------------
+สคริปต์ upload วิดีโอ attraction ผ่าน REST
+
+
+สิ่งที่ต้องทำต่อ
+================
+
+1. ทดสอบ Google Login บนมือถือจริง
+   - ใช้ APK/debug build ล่าสุด
+   - ถ้ายัง error ให้เช็ก SHA-1/SHA-256 ใน Firebase Project Settings
+   - เช็กว่า package name ยังเป็น com.example.project
+
+2. แก้ Mobile bugs ที่เหลือ
+   - Home profile icon ต้องแสดงรูปโปรไฟล์
+   - กด profile icon แล้วไปหน้า Profile
+   - แก้ Bottom overflow ใน card สถานที่
+   - ทำ fuzzy search ให้ค้นหาใกล้เคียงได้
+
+3. ตรวจ Firebase media
+   - รูปสถานที่โหลดได้
+   - วิดีโอ user-uploaded ดูได้
+   - profile image upload/read ได้
+
+4. ปิดงาน KNN
+   - ตรวจว่า backend ใช้ v2 จริง
+   - ทดสอบ /health และ /recommend
+   - ทดสอบ exclude history
+   - เก็บ evaluation result สำหรับรายงาน
+
+5. ทำ Web Admin
+   - Dashboard สรุปจำนวนสถานที่/ผู้ใช้/วิดีโอ/รูป
+   - CRUD สถานที่
+   - Upload รูปสถานที่ไป Firebase Storage แล้วเก็บ URL ใน Firestore
+   - จัดการวิดีโอ user-uploaded
+
+6. Build readiness
+   - flutter analyze
+   - flutter test
+   - flutter build apk --debug
+
+7. รายงานโครงงาน
+   - บท 1-5
+   - screenshot หลักของ mobile/admin/firebase/KNN
+
+
+คำสั่งที่ใช้บ่อย
+================
+
+รัน analyze:
+flutter analyze
+
+build debug APK:
+flutter build apk --debug
+
+รัน backend:
+uv run --python 3.12 --with-requirements backend\requirements.txt uvicorn backend.main:app --host 127.0.0.1 --port 8000
+
+ตรวจ Firebase apps:
+firebase apps:list --project travelrecommendation-851e9
+
+ดึง Android Firebase config:
+firebase apps:sdkconfig ANDROID 1:1051392765409:android:13d0ad863bb0bab3c4b6a0 --project travelrecommendation-851e9
+
+
+ข้อควรระวัง
+===========
+
+- อย่า re-enable Places API / Places API (New) โดยไม่ถามผู้ใช้ก่อน
+- อย่าเก็บรูปจำนวนมากเป็น local asset ใน APK เพราะจะทำให้ APK ใหญ่
+- แนวทางที่ถูกคือ upload รูปไป Firebase Storage แล้วเก็บ download URL ใน Firestore
+- ถ้าแก้ Google Login ต้องระวัง google_sign_in v7 เพราะ API ต่างจากตัวอย่างเก่า
+- ถ้าแก้ Firestore/Storage rules ต้องไม่เปิด allow read, write: if true ใน production
+- ถ้าเปลี่ยน applicationId/package name ต้องอัปเดต Firebase Android app และ SHA ใหม่ด้วย

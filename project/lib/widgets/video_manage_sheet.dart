@@ -141,7 +141,7 @@ class _VideoManageSheetState extends State<_VideoManageSheet> {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFFFFF9FF),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: BorderRadius.zero,
       ),
       padding: EdgeInsets.fromLTRB(20, 14, 20, 18 + bottomInset),
       child: SingleChildScrollView(
@@ -245,7 +245,7 @@ class _VideoManageSheetState extends State<_VideoManageSheet> {
                   child: OutlinedButton(
                     onPressed: isSaving ? null : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: appPurple,
+                      foregroundColor: appSky,
                       minimumSize: const Size.fromHeight(48),
                       side: const BorderSide(color: appBorder),
                       shape: RoundedRectangleBorder(
@@ -261,7 +261,7 @@ class _VideoManageSheetState extends State<_VideoManageSheet> {
                   child: FilledButton(
                     onPressed: canSave ? _save : null,
                     style: FilledButton.styleFrom(
-                      backgroundColor: appPurple,
+                      backgroundColor: appSky,
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
@@ -308,7 +308,7 @@ class _CaptionTextArea extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: appPurple, width: 1.4),
+          borderSide: const BorderSide(color: appSky, width: 1.4),
         ),
       ),
     );
@@ -377,22 +377,18 @@ class _SegmentedLocationButton extends StatelessWidget {
           curve: Curves.easeOutCubic,
           margin: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFF1DDF5) : Colors.transparent,
+            color: isSelected ? const Color(0xFFEAF7FF) : Colors.transparent,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 19,
-                color: isSelected ? appPurple : Colors.black87,
-              ),
+              Icon(icon, size: 19, color: isSelected ? appSky : Colors.black87),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? appPurple : Colors.black87,
+                  color: isSelected ? appSky : Colors.black87,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -437,7 +433,7 @@ class _SoftTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: appPurple, width: 1.4),
+          borderSide: const BorderSide(color: appSky, width: 1.4),
         ),
       ),
     );
@@ -455,12 +451,12 @@ class _SelectedPlaceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1DDF5),
+        color: const Color(0xFFEAF7FF),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle, color: appPurple, size: 28),
+          const Icon(Icons.check_circle, color: appSky, size: 28),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -523,7 +519,7 @@ class _PlaceOption extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: isSelected ? const Color(0xFFEEDCF2) : const Color(0xFFF7F3F8),
+        color: isSelected ? const Color(0xFFEAF7FF) : const Color(0xFFF8FCFF),
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
@@ -548,7 +544,7 @@ class _PlaceOption extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFF6B626E),
+                          color: Color(0xFF5E7A8A),
                           fontSize: 12,
                         ),
                       ),
@@ -556,7 +552,7 @@ class _PlaceOption extends StatelessWidget {
                   ),
                 ),
                 if (isSelected)
-                  const Icon(Icons.check_circle, color: Color(0xFF710078)),
+                  const Icon(Icons.check_circle, color: Color(0xFF7EC8E3)),
               ],
             ),
           ),

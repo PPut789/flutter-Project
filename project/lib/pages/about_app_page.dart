@@ -8,36 +8,38 @@ class AboutAppPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FCFF),
       body: SafeArea(
-        child: Column(
-          children: [
-            const MinimalHeader(title: 'เกี่ยวกับแอป'),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(28, 22, 28, 32),
-                children: const [
-                  _AboutLogo(),
-                  SizedBox(height: 30),
-                  _AboutTextSection(
-                    title: 'ชื่อโครงการ',
-                    body:
-                        'แอปพลิเคชันแนะนำสถานที่ท่องเที่ยวในประเทศไทยตามความสนใจส่วนบุคคลด้วย AI',
-                  ),
-                  _AboutTextSection(
-                    title: 'ข้อมูลสถานที่',
-                    body:
-                        'ครอบคลุมสถานที่ท่องเที่ยว 2,994 แห่ง ใน 31 จังหวัดทั่วประเทศไทย เพื่อให้คุณได้ค้นพบสถานที่ที่ตรงกับความต้องการของคุณมากที่สุด',
-                  ),
-                  _AboutTextSection(
-                    title: 'ระบบแนะนำอัจฉริยะ',
-                    body:
-                        'K-Nearest Neighbors (KNN): ระบบใช้ Algorithm KNN เพื่อวิเคราะห์ความสนใจและประวัติการเข้าชมของคุณ เพื่อเปรียบเทียบและค้นหาสถานที่ที่คล้ายคลึงกัน\n\nFirebase: ใช้ในการจัดการฐานข้อมูลและรองรับการใช้งานแบบเรียลไทม์',
-                  ),
-                ],
+        child: AppPastelBackground(
+          child: Column(
+            children: [
+              const MinimalHeader(title: 'เกี่ยวกับแอป'),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(28, 22, 28, 32),
+                  children: const [
+                    _AboutLogo(),
+                    SizedBox(height: 30),
+                    _AboutTextSection(
+                      title: 'ชื่อโครงการ',
+                      body:
+                          'แอปพลิเคชันแนะนำสถานที่ท่องเที่ยวในประเทศไทยตามความสนใจส่วนบุคคลด้วย AI',
+                    ),
+                    _AboutTextSection(
+                      title: 'ข้อมูลสถานที่',
+                      body:
+                          'ครอบคลุมสถานที่ท่องเที่ยว 2,994 แห่ง ใน 31 จังหวัดทั่วประเทศไทย เพื่อให้คุณได้ค้นพบสถานที่ที่ตรงกับความต้องการของคุณมากที่สุด',
+                    ),
+                    _AboutTextSection(
+                      title: 'ระบบแนะนำอัจฉริยะ',
+                      body:
+                          'K-Nearest Neighbors (KNN): ระบบใช้ Algorithm KNN เพื่อวิเคราะห์ความสนใจและประวัติการเข้าชมของคุณ เพื่อเปรียบเทียบและค้นหาสถานที่ที่คล้ายคลึงกัน\n\nFirebase: ใช้ในการจัดการฐานข้อมูลและรองรับการใช้งานแบบเรียลไทม์',
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -55,7 +57,7 @@ class _AboutLogo extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: appPurple,
+            color: appSky,
             borderRadius: BorderRadius.circular(8),
           ),
           alignment: Alignment.center,
@@ -101,7 +103,7 @@ class _AboutTextSection extends StatelessWidget {
           Text(
             body,
             style: const TextStyle(
-              color: Color(0xFF5D5260),
+              color: Color(0xFF5E7A8A),
               height: 1.7,
               fontSize: 15,
             ),

@@ -32,15 +32,15 @@ class MyApp extends StatelessWidget {
       title: 'TravelThai',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7B2B83),
-          primary: const Color(0xFF7B2B83),
+          seedColor: const Color(0xFF7EC8E3),
+          primary: const Color(0xFF7EC8E3),
         ),
-        scaffoldBackgroundColor: const Color(0xFFFDFBFF),
+        scaffoldBackgroundColor: const Color(0xFFF8FCFF),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Color(0xFFFDFBFF),
+          backgroundColor: Color(0xFFF8FCFF),
           foregroundColor: Colors.black,
           titleTextStyle: TextStyle(
             color: Colors.black,
@@ -50,18 +50,18 @@ class MyApp extends StatelessWidget {
         ),
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFF2E4F5),
+          indicatorColor: const Color(0xFFFFF3C4),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             final isSelected = states.contains(WidgetState.selected);
             return TextStyle(
-              color: isSelected ? const Color(0xFF710078) : Colors.black54,
+              color: isSelected ? const Color(0xFF7EC8E3) : Colors.black54,
               fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
             );
           }),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             final isSelected = states.contains(WidgetState.selected);
             return IconThemeData(
-              color: isSelected ? const Color(0xFF7B2B83) : Colors.black54,
+              color: isSelected ? const Color(0xFF7EC8E3) : Colors.black54,
             );
           }),
         ),

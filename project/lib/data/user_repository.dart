@@ -62,6 +62,39 @@ class UserRepository {
     }, SetOptions(merge: true));
   }
 
+  static Future<void> ensureUserProfile(User? user) async {
+    if (user == null) return;
+
+    final document = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
+    final snapshot = await document.get();
+    final data = snapshot.data();
+
+    final existingUsername = (data?['username'] as String?)?.trim();
+    final existingDisplayName = (data?['displayName'] as String?)?.trim();
+    final existingPhotoUrl = (data?['photoUrl'] as String?)?.trim();
+    final displayName = user.displayName?.trim();
+    final email = user.email?.trim();
+    final fallbackUsername = email?.split('@').first.trim();
+
+    await document.set({
+      'uid': user.uid,
+      'username': existingUsername?.isNotEmpty == true
+          ? existingUsername
+          : (displayName?.isNotEmpty == true ? displayName : fallbackUsername),
+      'displayName': existingDisplayName?.isNotEmpty == true
+          ? existingDisplayName
+          : displayName,
+      'email': email,
+      'photoUrl': existingPhotoUrl?.isNotEmpty == true
+          ? existingPhotoUrl
+          : user.photoURL,
+      if (!snapshot.exists) 'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   static Future<AppSettings> loadAppSettings({bool refresh = false}) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (!refresh && _cachedSettings != null && _settingsUserId == uid) {

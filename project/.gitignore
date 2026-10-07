@@ -36,6 +36,12 @@ migrate_working_dir/
 /coverage/
 node_modules/
 
+# Local backups and temporary outputs
+/backup/
+/tmp/
+/output/
+*.bak
+
 # Symbolication related
 app.*.symbols
 

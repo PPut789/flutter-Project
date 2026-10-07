@@ -1,9 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../data/user_repository.dart';
 import '../utils/app_routes.dart';
-import '../widgets/app_chrome.dart';
 import 'home_page.dart';
 import 'location_page.dart';
 import 'register_page.dart';
@@ -16,6 +17,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static Future<void>? _googleSignInInitialization;
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool isLoading = false;
@@ -74,6 +77,82 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
+    try {
+      final credential = await _createGoogleCredential();
+      await UserRepository.ensureUserProfile(credential.user);
+      final preferences = await UserRepository.loadPreferences();
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        smoothRoute(
+          preferences == null
+              ? const LocationPage()
+              : HomePage(preferences: preferences),
+        ),
+      );
+    } on GoogleSignInException catch (error) {
+      if (!mounted) return;
+      if (error.code == GoogleSignInExceptionCode.canceled) return;
+      setState(() {
+        errorMessage = _googleSignInErrorText(error);
+      });
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = _authErrorText(error);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage =
+            'ไม่สามารถเข้าสู่ระบบด้วย Google ได้ กรุณาลองใหม่อีกครั้ง';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<UserCredential> _createGoogleCredential() async {
+    if (kIsWeb) {
+      final provider = GoogleAuthProvider()
+        ..addScope('email')
+        ..addScope('profile');
+      return FirebaseAuth.instance.signInWithPopup(provider);
+    }
+
+    await _initializeGoogleSignIn();
+
+    if (!GoogleSignIn.instance.supportsAuthenticate()) {
+      throw const GoogleSignInException(
+        code: GoogleSignInExceptionCode.uiUnavailable,
+        description: 'Google Sign-In is not available on this platform.',
+      );
+    }
+
+    final googleUser = await GoogleSignIn.instance.authenticate();
+    final googleAuth = googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      idToken: googleAuth.idToken,
+    );
+
+    return FirebaseAuth.instance.signInWithCredential(credential);
+  }
+
+  Future<void> _initializeGoogleSignIn() {
+    return _googleSignInInitialization ??= GoogleSignIn.instance.initialize();
+  }
+
   Future<void> _resetPassword() async {
     final email = emailController.text.trim();
     if (email.isEmpty) {
@@ -112,132 +191,111 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  String _googleSignInErrorText(GoogleSignInException error) {
+    switch (error.code) {
+      case GoogleSignInExceptionCode.clientConfigurationError:
+      case GoogleSignInExceptionCode.providerConfigurationError:
+        return 'การตั้งค่า Google Sign-In ยังไม่ครบ กรุณาตรวจสอบ SHA-1 และ google-services.json';
+      case GoogleSignInExceptionCode.uiUnavailable:
+        return 'อุปกรณ์นี้ยังไม่รองรับการเข้าสู่ระบบด้วย Google';
+      case GoogleSignInExceptionCode.interrupted:
+      case GoogleSignInExceptionCode.userMismatch:
+        return 'การเข้าสู่ระบบด้วย Google ถูกขัดจังหวะ กรุณาลองใหม่อีกครั้ง';
+      case GoogleSignInExceptionCode.canceled:
+        return '';
+      case GoogleSignInExceptionCode.unknownError:
+        return 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้ กรุณาลองใหม่อีกครั้ง';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFCF5),
+      backgroundColor: const Color(0xFFEAF5FB),
       body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CustomPaint(painter: _LoginWallpaperPainter()),
-            ),
-            Positioned(
-              top: 44,
-              right: 24,
-              child: IgnorePointer(
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  color: const Color(0xFF07524F).withValues(alpha: 0.10),
-                  size: 18,
-                ),
-              ),
-            ),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(26, 12, 26, 22),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight - 34,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: RoundBackButton(
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.75,
-                              ),
-                              onPressed: () => Navigator.pop(context),
+        child: ColoredBox(
+          color: const Color(0xFFEAF5FB),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(30, 18, 30, 22),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 40,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 8),
+                        _AuthCard(
+                          children: [
+                            _AuthField(
+                              controller: emailController,
+                              label: "อีเมล",
+                              hint: "กรอกอีเมลของคุณ",
+                              keyboardType: TextInputType.emailAddress,
                             ),
-                          ),
-                          const Spacer(flex: 2),
-                          _AuthCard(
-                            title: "เข้าสู่ระบบ",
-                            subtitle: "ยินดีต้อนรับกลับมา",
-                            children: [
-                              _AuthField(
-                                controller: emailController,
-                                label: "อีเมล",
-                                hint: "youremail@gmail.com",
-                                keyboardType: TextInputType.emailAddress,
-                              ),
-                              const SizedBox(height: 18),
-                              _AuthField(
-                                controller: passwordController,
-                                label: "รหัสผ่าน",
-                                hint: "••••••••••",
-                                obscureText: true,
-                              ),
-                              const SizedBox(height: 2),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: isLoading ? null : _resetPassword,
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: const Color(0xFF07524F),
-                                    padding: EdgeInsets.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                    textStyle: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                            const SizedBox(height: 18),
+                            _AuthField(
+                              controller: passwordController,
+                              label: "รหัสผ่าน",
+                              hint: "กรอกรหัสผ่านของคุณ",
+                              obscureText: true,
+                            ),
+                            const SizedBox(height: 2),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: isLoading ? null : _resetPassword,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFF7EC8E3),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  textStyle: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
                                   ),
-                                  child: const Text('ลืมรหัสผ่าน?'),
                                 ),
+                                child: const Text('ลืมรหัสผ่าน?'),
                               ),
-                              if (errorMessage.isNotEmpty) ...[
-                                const SizedBox(height: 14),
-                                _AuthErrorText(message: errorMessage),
-                              ],
-                              const SizedBox(height: 26),
-                              _LoginButton(
-                                isLoading: isLoading,
-                                onPressed: _signIn,
-                              ),
-                              const SizedBox(height: 22),
-                              const _DividerText(label: 'หรือ'),
+                            ),
+                            if (errorMessage.isNotEmpty) ...[
                               const SizedBox(height: 14),
-                              _GoogleButton(
-                                onPressed: isLoading
-                                    ? null
-                                    : () {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Google Sign-In ยังไม่เปิดใช้งาน',
-                                            ),
-                                          ),
-                                        );
-                                      },
-                              ),
+                              _AuthErrorText(message: errorMessage),
                             ],
-                          ),
-                          const Spacer(flex: 3),
-                          _AuthSwitchLink(
-                            text: "ยังไม่มีบัญชี?",
-                            actionText: "สมัครสมาชิก",
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                smoothRoute(const RegisterPage()),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                            const SizedBox(height: 26),
+                            _LoginButton(
+                              isLoading: isLoading,
+                              onPressed: _signIn,
+                            ),
+                            const SizedBox(height: 22),
+                            const _DividerText(label: 'หรือ'),
+                            const SizedBox(height: 14),
+                            _GoogleButton(
+                              onPressed: isLoading ? null : _signInWithGoogle,
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        _AuthSwitchLink(
+                          text: "ยังไม่มีบัญชี?",
+                          actionText: "สมัครสมาชิก",
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              smoothRoute(const RegisterPage()),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-          ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -245,15 +303,9 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class _AuthCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
   final List<Widget> children;
 
-  const _AuthCard({
-    required this.title,
-    required this.subtitle,
-    required this.children,
-  });
+  const _AuthCard({required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -263,20 +315,15 @@ class _AuthCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
+          Center(
+            child: Image.asset(
+              'assets/logos/login_brand_header_transparent.png',
+              width: 262,
+              height: 220,
+              fit: BoxFit.contain,
             ),
           ),
-          const SizedBox(height: 5),
-          Text(
-            subtitle,
-            style: const TextStyle(color: appTextMuted, fontSize: 14),
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 18),
           ...children,
         ],
       ),
@@ -313,16 +360,31 @@ class _AuthFieldState extends State<_AuthField> {
       children: [
         Text(
           widget.label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+          style: const TextStyle(
+            color: Color(0xFF3A6384),
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+          ),
         ),
-        const SizedBox(height: 9),
+        const SizedBox(height: 8),
         TextField(
           controller: widget.controller,
           keyboardType: widget.keyboardType,
           obscureText: isObscured,
           decoration: InputDecoration(
             hintText: widget.hint,
-            hintStyle: const TextStyle(fontSize: 14, color: Colors.black38),
+            hintStyle: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF9AAEC0),
+              fontWeight: FontWeight.w600,
+            ),
+            prefixIcon: Icon(
+              widget.obscureText
+                  ? Icons.lock_outline_rounded
+                  : Icons.person_outline_rounded,
+              size: 21,
+              color: const Color(0xFF6D8396),
+            ),
             suffixIcon: widget.obscureText
                 ? IconButton(
                     onPressed: () {
@@ -334,27 +396,28 @@ class _AuthFieldState extends State<_AuthField> {
                       isObscured
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      size: 18,
+                      color: const Color(0xFF6D8396),
+                      size: 20,
                     ),
                   )
                 : null,
             filled: true,
-            fillColor: const Color(0xFFFCFAFD),
+            fillColor: Colors.white.withValues(alpha: 0.82),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 15,
+              horizontal: 18,
+              vertical: 16,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(11),
-              borderSide: const BorderSide(color: appBorder),
+              borderRadius: BorderRadius.circular(999),
+              borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(11),
-              borderSide: const BorderSide(color: appBorder),
+              borderRadius: BorderRadius.circular(999),
+              borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(11),
-              borderSide: const BorderSide(color: appPurple, width: 1.2),
+              borderRadius: BorderRadius.circular(999),
+              borderSide: const BorderSide(color: Color(0xFF7AAED3), width: 1),
             ),
           ),
         ),
@@ -372,17 +435,18 @@ class _LoginButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 54,
+      height: 50,
       child: FilledButton(
         onPressed: isLoading ? null : onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF07524F),
+          backgroundColor: const Color(0xFF76ADD1),
           foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFFB8CAC8),
+          disabledBackgroundColor: const Color(0xFFEAF7FF),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(999),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w900),
+          elevation: 0,
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
         ),
         child: isLoading
             ? const SizedBox(
@@ -406,14 +470,23 @@ class _DividerText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label,
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        color: appTextMuted,
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-      ),
+    return Row(
+      children: [
+        const Expanded(child: Divider(color: Color(0xFFC8D7E3), height: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF7A93A7),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const Expanded(child: Divider(color: Color(0xFFC8D7E3), height: 1)),
+      ],
     );
   }
 }
@@ -431,11 +504,12 @@ class _GoogleButton extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF1F2933),
-          side: const BorderSide(color: appBorder),
+          backgroundColor: Colors.white.withValues(alpha: 0.52),
+          side: const BorderSide(color: Color(0xFFBFD1DF)),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(999),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w900),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -443,7 +517,10 @@ class _GoogleButton extends StatelessWidget {
           children: [
             _GoogleMark(),
             SizedBox(width: 10),
-            Text('Google', style: TextStyle(color: Color(0xFF1F2933))),
+            Text(
+              'เข้าสู่ระบบด้วย Google',
+              style: TextStyle(color: Color(0xFF526B7E)),
+            ),
           ],
         ),
       ),
@@ -509,219 +586,6 @@ class _GoogleLogoPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _LoginWallpaperPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paleGreenPaint = Paint()
-      ..color = const Color(0xFFE8F0EA).withValues(alpha: 0.76)
-      ..style = PaintingStyle.fill;
-    final warmCreamPaint = Paint()
-      ..color = const Color(0xFFFBF6EA).withValues(alpha: 0.94)
-      ..style = PaintingStyle.fill;
-    final ivoryPaint = Paint()
-      ..color = const Color(0xFFFFFCF5).withValues(alpha: 0.96)
-      ..style = PaintingStyle.fill;
-    final translucentCreamPaint = Paint()
-      ..color = const Color(0xFFF4EBDC).withValues(alpha: 0.36)
-      ..style = PaintingStyle.fill;
-    final linePaint = Paint()
-      ..color = const Color(0xFFC8C1B2).withValues(alpha: 0.28)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-    final faintLinePaint = Paint()
-      ..color = const Color(0xFFCFC9BA).withValues(alpha: 0.16)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.7;
-    final greenLinePaint = Paint()
-      ..color = const Color(0xFFB7C8BE).withValues(alpha: 0.30)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.9;
-
-    final baseLayer = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width, size.height * 0.12)
-      ..cubicTo(
-        size.width * 0.78,
-        size.height * 0.08,
-        size.width * 0.56,
-        size.height * 0.13,
-        size.width * 0.34,
-        size.height * 0.10,
-      )
-      ..cubicTo(
-        size.width * 0.18,
-        size.height * 0.08,
-        size.width * 0.08,
-        size.height * 0.11,
-        0,
-        size.height * 0.08,
-      )
-      ..close();
-    canvas.drawPath(baseLayer, paleGreenPaint);
-
-    final creamLayer = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width, size.height * 0.07)
-      ..cubicTo(
-        size.width * 0.80,
-        size.height * 0.04,
-        size.width * 0.68,
-        size.height * 0.08,
-        size.width * 0.52,
-        size.height * 0.07,
-      )
-      ..cubicTo(
-        size.width * 0.28,
-        size.height * 0.06,
-        size.width * 0.18,
-        size.height * 0.03,
-        0,
-        size.height * 0.06,
-      )
-      ..close();
-    canvas.drawPath(creamLayer, warmCreamPaint);
-
-    final mainIvoryWave = Path()
-      ..moveTo(0, size.height * 0.10)
-      ..cubicTo(
-        size.width * 0.16,
-        size.height * 0.06,
-        size.width * 0.30,
-        size.height * 0.13,
-        size.width * 0.43,
-        size.height * 0.10,
-      )
-      ..cubicTo(
-        size.width * 0.61,
-        size.height * 0.06,
-        size.width * 0.78,
-        size.height * 0.09,
-        size.width,
-        size.height * 0.06,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(mainIvoryWave, ivoryPaint);
-
-    final softBlob = Path()
-      ..moveTo(0, size.height * 0.15)
-      ..cubicTo(
-        size.width * 0.26,
-        size.height * 0.11,
-        size.width * 0.45,
-        size.height * 0.16,
-        size.width * 0.55,
-        size.height * 0.22,
-      )
-      ..cubicTo(
-        size.width * 0.66,
-        size.height * 0.29,
-        size.width * 0.76,
-        size.height * 0.30,
-        size.width,
-        size.height * 0.24,
-      )
-      ..lineTo(size.width, 0)
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(softBlob, translucentCreamPaint);
-
-    final leftSweep = Path()
-      ..moveTo(size.width * 0.02, size.height * 0.13)
-      ..cubicTo(
-        size.width * 0.18,
-        size.height * 0.10,
-        size.width * 0.32,
-        size.height * 0.13,
-        size.width * 0.48,
-        size.height * 0.10,
-      );
-    canvas.drawPath(leftSweep, greenLinePaint);
-
-    final longSweep = Path()
-      ..moveTo(0, size.height * 0.18)
-      ..cubicTo(
-        size.width * 0.18,
-        size.height * 0.12,
-        size.width * 0.42,
-        size.height * 0.14,
-        size.width * 0.60,
-        size.height * 0.08,
-      )
-      ..cubicTo(
-        size.width * 0.76,
-        size.height * 0.03,
-        size.width * 0.88,
-        size.height * 0.06,
-        size.width,
-        size.height * 0.04,
-      );
-    canvas.drawPath(longSweep, linePaint);
-
-    for (var i = 0; i < 15; i++) {
-      final inset = i * 8.2;
-      final arcRect = Rect.fromLTWH(
-        -size.width * 0.05 + inset * 0.10,
-        -size.height * 0.18 + inset * 0.12,
-        size.width * 0.62 + inset * 0.42,
-        size.height * 0.34 + inset * 0.20,
-      );
-      canvas.drawArc(arcRect, -0.40, 2.25, false, faintLinePaint);
-    }
-
-    for (var i = 0; i < 18; i++) {
-      final inset = i * 7.4;
-      final arcRect = Rect.fromLTWH(
-        size.width * 0.45 + inset * 0.10,
-        -size.height * 0.13 + inset * 0.12,
-        size.width * 0.70 + inset * 0.72,
-        size.height * 0.34 + inset * 0.18,
-      );
-      canvas.drawArc(arcRect, 2.58, 3.00, false, faintLinePaint);
-    }
-
-    for (var i = 0; i < 8; i++) {
-      final inset = i * 10.0;
-      final arcRect = Rect.fromLTWH(
-        size.width * 0.18 + inset * 0.30,
-        size.height * 0.03 + inset * 0.15,
-        size.width * 0.86 + inset,
-        size.height * 0.22 + inset * 0.15,
-      );
-      canvas.drawArc(arcRect, 3.18, 1.55, false, faintLinePaint);
-    }
-
-    final sparklePaint = Paint()
-      ..color = const Color(0xFFC8C1B2).withValues(alpha: 0.42)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.9
-      ..strokeCap = StrokeCap.round;
-    void drawSparkle(Offset center, double radius, [Paint? paint]) {
-      final usedPaint = paint ?? sparklePaint;
-      canvas.drawLine(
-        center.translate(-radius, 0),
-        center.translate(radius, 0),
-        usedPaint,
-      );
-      canvas.drawLine(
-        center.translate(0, -radius),
-        center.translate(0, radius),
-        usedPaint,
-      );
-    }
-
-    drawSparkle(Offset(size.width * 0.90, size.height * 0.13), 5);
-    drawSparkle(Offset(size.width * 0.86, size.height * 0.08), 2.7);
-    drawSparkle(Offset(size.width * 0.95, size.height * 0.07), 2.2);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class _AuthErrorText extends StatelessWidget {
   final String message;
 
@@ -756,7 +620,7 @@ class _AuthSwitchLink extends StatelessWidget {
         Flexible(
           child: Text(
             "$text ",
-            style: const TextStyle(color: Colors.grey),
+            style: const TextStyle(color: Color(0xFF8A9EAF)),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -765,7 +629,7 @@ class _AuthSwitchLink extends StatelessWidget {
           child: Text(
             actionText,
             style: const TextStyle(
-              color: Color(0xFF07524F),
+              color: Color(0xFF4A8FBD),
               fontWeight: FontWeight.w800,
             ),
           ),

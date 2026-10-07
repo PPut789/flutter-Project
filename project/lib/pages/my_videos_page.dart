@@ -17,80 +17,85 @@ class MyVideosPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FCFF),
       body: SafeArea(
-        child: Column(
-          children: [
-            const MinimalHeader(title: 'วิดีโอของฉัน'),
-            Expanded(
-              child: FutureBuilder<List<Place>>(
-                future: PlaceRepository.loadPlaces(),
-                builder: (context, placesSnapshot) {
-                  if (placesSnapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+        child: AppPastelBackground(
+          child: Column(
+            children: [
+              const MinimalHeader(title: 'วิดีโอของฉัน'),
+              Expanded(
+                child: FutureBuilder<List<Place>>(
+                  future: PlaceRepository.loadPlaces(),
+                  builder: (context, placesSnapshot) {
+                    if (placesSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                  final places = placesSnapshot.data ?? const <Place>[];
-                  return StreamBuilder<List<VideoPost>>(
-                    stream: VideoRepository.watchMyVideos(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              'Cannot load videos: ${snapshot.error}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.black54),
-                            ),
-                          ),
-                        );
-                      }
-
-                      final videos = snapshot.data ?? const <VideoPost>[];
-                      if (videos.isEmpty) {
-                        return const _EmptyMyVideosState();
-                      }
-
-                      return GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              childAspectRatio: 0.62,
-                            ),
-                        itemCount: videos.length,
-                        itemBuilder: (context, index) {
-                          return _MyVideoGridTile(
-                            video: videos[index],
-                            places: places,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                smoothRoute(
-                                  _MyVideoViewerPage(
-                                    video: videos[index],
-                                    places: places,
-                                  ),
-                                ),
-                              );
-                            },
+                    final places = placesSnapshot.data ?? const <Place>[];
+                    return StreamBuilder<List<VideoPost>>(
+                      stream: VideoRepository.watchMyVideos(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
                           );
-                        },
-                      );
-                    },
-                  );
-                },
+                        }
+
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Text(
+                                'Cannot load videos: ${snapshot.error}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.black54),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final videos = snapshot.data ?? const <VideoPost>[];
+                        if (videos.isEmpty) {
+                          return const _EmptyMyVideosState();
+                        }
+
+                        return GridView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                                childAspectRatio: 0.62,
+                              ),
+                          itemCount: videos.length,
+                          itemBuilder: (context, index) {
+                            return _MyVideoGridTile(
+                              video: videos[index],
+                              places: places,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  smoothRoute(
+                                    _MyVideoViewerPage(
+                                      video: videos[index],
+                                      places: places,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

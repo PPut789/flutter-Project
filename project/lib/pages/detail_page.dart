@@ -5,8 +5,15 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../models/place_model.dart';
 import '../utils/place_media.dart';
 import '../widgets/app_chrome.dart';
-import '../widgets/place_image_placeholder.dart';
+import '../widgets/resolved_place_image.dart';
 import '../widgets/youtube_embed_view.dart';
+
+const _detailBg = Color(0xFFEAF5FB);
+const _detailInk = Color(0xFF263F52);
+const _detailPrimary = Color(0xFF76ADD1);
+const _detailPrimaryDark = Color(0xFF3A6384);
+const _detailMuted = Color(0xFF7A93A7);
+const _detailLine = Color(0xFFBFD1DF);
 
 class DetailPage extends StatefulWidget {
   final Place place;
@@ -59,245 +66,267 @@ class _DetailPageState extends State<DetailPage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: ListView(
-        children: [
-          Column(
-            children: [
-              GestureDetector(
-                onHorizontalDragEnd: (details) {
-                  final velocity = details.primaryVelocity ?? 0;
-                  if (velocity < 0) {
-                    _showNextImage(displayImages.length);
-                  } else if (velocity > 0) {
-                    _showPreviousImage(displayImages.length);
-                  }
-                },
-                child: Stack(
-                  children: [
-                    Hero(
-                      tag: _placeHeroTag(widget.place),
-                      child: _PlaceImage(
-                        imagePath: displayImages[currentImageIndex],
-                        placeName: widget.place.name,
-                        height: 320,
-                        width: double.infinity,
-                        onLoadError: () {
-                          final imagePath = displayImages[currentImageIndex];
-                          if (!imagePath.startsWith('http')) return;
-                          setState(() {
-                            failedImageUrls.add(imagePath);
-                          });
-                        },
-                      ),
-                    ),
-                    Positioned(
-                      top: MediaQuery.paddingOf(context).top + 12,
-                      left: 16,
-                      child: RoundBackButton(
-                        onPressed: () => Navigator.pop(context),
-                        backgroundColor: Colors.black.withValues(alpha: 0.28),
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    if (displayImages.length > 1) ...[
-                      Positioned(
-                        left: 12,
-                        top: 0,
-                        bottom: 0,
-                        child: _ImageNavButton(
-                          icon: Icons.chevron_left,
-                          onTap: () => _showPreviousImage(displayImages.length),
-                        ),
-                      ),
-                      Positioned(
-                        right: 12,
-                        top: 0,
-                        bottom: 0,
-                        child: _ImageNavButton(
-                          icon: Icons.chevron_right,
-                          onTap: () => _showNextImage(displayImages.length),
-                        ),
-                      ),
-                      Positioned(
-                        right: 14,
-                        bottom: 14,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            "${currentImageIndex + 1}/${displayImages.length}",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              SizedBox(
-                height: 76,
-
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  scrollDirection: Axis.horizontal,
-
-                  itemCount: displayImages.length,
-
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        _selectImage(index, displayImages.length);
-                      },
-
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 5),
-
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: currentImageIndex == index
-                                ? const Color(0xFF710078)
-                                : Colors.transparent,
-
-                            width: 3,
-                          ),
-
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-
-                          child: _PlaceImage(
-                            imagePath: displayImages[index],
-                            placeName: widget.place.name,
-
-                            width: 92,
-                            height: 70,
-                            onLoadError: () {
-                              final imagePath = displayImages[index];
-                              if (!imagePath.startsWith('http')) return;
-                              setState(() {
-                                failedImageUrls.add(imagePath);
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
-
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-
+      backgroundColor: _detailBg,
+      body: ColoredBox(
+        color: _detailBg,
+        child: ListView(
+          children: [
+            Column(
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.place.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.w900,
-                              height: 1.15,
+                GestureDetector(
+                  onHorizontalDragEnd: (details) {
+                    final velocity = details.primaryVelocity ?? 0;
+                    if (velocity < 0) {
+                      _showNextImage(displayImages.length);
+                    } else if (velocity > 0) {
+                      _showPreviousImage(displayImages.length);
+                    }
+                  },
+                  child: Stack(
+                    children: [
+                      Hero(
+                        tag: _placeHeroTag(widget.place),
+                        child: _PlaceImage(
+                          imagePath: displayImages[currentImageIndex],
+                          placeName: widget.place.name,
+                          height: 320,
+                          width: double.infinity,
+                          onLoadError: () {
+                            final imagePath = displayImages[currentImageIndex];
+                            if (!imagePath.startsWith('http')) return;
+                            setState(() {
+                              failedImageUrls.add(imagePath);
+                            });
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        top: MediaQuery.paddingOf(context).top + 12,
+                        left: 16,
+                        child: RoundBackButton(
+                          onPressed: () => Navigator.pop(context),
+                          backgroundColor: Colors.black.withValues(alpha: 0.28),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      if (displayImages.length > 1) ...[
+                        Positioned(
+                          left: 12,
+                          top: 0,
+                          bottom: 0,
+                          child: _ImageNavButton(
+                            icon: Icons.chevron_left,
+                            onTap: () =>
+                                _showPreviousImage(displayImages.length),
+                          ),
+                        ),
+                        Positioned(
+                          right: 12,
+                          top: 0,
+                          bottom: 0,
+                          child: _ImageNavButton(
+                            icon: Icons.chevron_right,
+                            onTap: () => _showNextImage(displayImages.length),
+                          ),
+                        ),
+                        Positioned(
+                          right: 14,
+                          bottom: 14,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "${currentImageIndex + 1}/${displayImages.length}",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "${widget.place.province} • ${widget.place.region}",
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: appTextMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    IconButton.filled(
-                      onPressed: () => _openGoogleMaps(context),
-                      icon: const Icon(Icons.map_outlined),
-                      tooltip: 'เปิดใน Google Maps',
-                      style: IconButton.styleFrom(
-                        backgroundColor: appPurple,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _InfoPill(
-                      icon: Icons.category_outlined,
-                      text: widget.place.category,
-                    ),
-                    _InfoPill(
-                      icon: Icons.category_outlined,
-                      text: widget.place.type,
-                    ),
-                    _InfoPill(
-                      icon: Icons.explore_outlined,
-                      text: widget.place.activity,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 22),
-                const Divider(color: appBorder, height: 1),
-                const SizedBox(height: 24),
-
-                _DetailSection(
-                  title: 'เกี่ยวกับสถานที่',
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (youtubeUrls.isNotEmpty) ...[
-                        _YouTubeSection(
-                          youtubeUrls: youtubeUrls,
-                          placeName: widget.place.name,
                         ),
-                        const SizedBox(height: 16),
                       ],
-                      Text(
-                        widget.place.description,
-                        style: const TextStyle(fontSize: 16, height: 1.6),
-                      ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
+
+                SizedBox(
+                  height: 76,
+
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    scrollDirection: Axis.horizontal,
+
+                    itemCount: displayImages.length,
+
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () {
+                          _selectImage(index, displayImages.length);
+                        },
+
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 5),
+
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: currentImageIndex == index
+                                  ? _detailPrimaryDark
+                                  : Colors.transparent,
+
+                              width: 3,
+                            ),
+
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+
+                            child: _PlaceImage(
+                              imagePath: displayImages[index],
+                              placeName: widget.place.name,
+
+                              width: 92,
+                              height: 70,
+                              onLoadError: () {
+                                final imagePath = displayImages[index];
+                                if (!imagePath.startsWith('http')) return;
+                                setState(() {
+                                  failedImageUrls.add(imagePath);
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _detailPrimaryDark.withValues(alpha: 0.08),
+                      blurRadius: 24,
+                      spreadRadius: -8,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.place.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: _detailInk,
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.15,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "${widget.place.province} • ${widget.place.region}",
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: _detailMuted,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _GoogleMapsButton(
+                          tone: _detailToneFor(widget.place.category),
+                          onPressed: () => _openGoogleMaps(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _InfoPill(
+                          icon: Icons.category_outlined,
+                          text: widget.place.category,
+                        ),
+                        _InfoPill(
+                          icon: Icons.category_outlined,
+                          text: widget.place.type,
+                        ),
+                        _InfoPill(
+                          icon: Icons.explore_outlined,
+                          text: widget.place.activity,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 22),
+                    const Divider(color: _detailLine, height: 1),
+                    const SizedBox(height: 24),
+
+                    _DetailSection(
+                      title: 'เกี่ยวกับสถานที่',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (youtubeUrls.isNotEmpty) ...[
+                            _YouTubeSection(
+                              youtubeUrls: youtubeUrls,
+                              placeName: widget.place.name,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          Text(
+                            widget.place.description,
+                            style: const TextStyle(
+                              color: _detailInk,
+                              fontSize: 16,
+                              height: 1.6,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -343,32 +372,155 @@ class _InfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (text.trim().isEmpty) return const SizedBox.shrink();
+    final tone = _detailToneFor(text);
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 300),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F1FA),
+        color: tone.background,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: appBorder),
+        border: Border.all(color: tone.accent.withValues(alpha: 0.34)),
+        boxShadow: [
+          BoxShadow(
+            color: tone.accent.withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: appPurple),
+          Icon(icon, size: 15, color: tone.accent),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                color: tone.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _GoogleMapsButton extends StatelessWidget {
+  final _DetailTone tone;
+  final VoidCallback onPressed;
+
+  const _GoogleMapsButton({required this.tone, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: tone.accent,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: tone.accent.withValues(alpha: 0.28),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.map_outlined, color: Colors.white, size: 22),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailTone {
+  final Color background;
+  final Color accent;
+  final Color text;
+
+  const _DetailTone({
+    required this.background,
+    required this.accent,
+    required this.text,
+  });
+}
+
+_DetailTone _detailToneFor(String label) {
+  final accent = _detailAccentFor(label);
+  final background = Color.lerp(Colors.white, accent, 0.16)!;
+
+  return _DetailTone(
+    background: background,
+    accent: accent,
+    text: Color.lerp(_detailInk, accent, 0.38)!,
+  );
+}
+
+Color _detailAccentFor(String label) {
+  if (label.contains("ธรรมชาติ")) {
+    return const Color(0xFF3AA6C8);
+  }
+  if (label.contains("ภูเขา") ||
+      label.contains("เดินป่า") ||
+      label.contains("อุทยานแห่งชาติ")) {
+    return const Color(0xFF3E9F83);
+  }
+  if (label.contains("ทะเล") ||
+      label.contains("ชายหาด") ||
+      label.contains("เกาะ")) {
+    return const Color(0xFF1FAEAF);
+  }
+  if (label.contains("น้ำตก") ||
+      label.contains("น้ำตก") ||
+      label.contains("แม่น้ำ") ||
+      label.contains("คลอง")) {
+    return const Color(0xFF22A9D6);
+  }
+  if (label.contains("จุดชมวิว") || label.contains("ชมวิว")) {
+    return const Color(0xFFD6A431);
+  }
+  if (label.contains("วัฒนธรรม") ||
+      label.contains("ประวัติศาสตร์") ||
+      label.contains("โบราณ") ||
+      label.contains("วัด") ||
+      label.contains("พิพิธภัณฑ์") ||
+      label.contains("ไหว้พระ")) {
+    return const Color(0xFF8E78D6);
+  }
+  if (label.contains("โบราณสถาน")) {
+    return const Color(0xFFC9903B);
+  }
+  if (label.contains("คาเฟ่") ||
+      label.contains("อาหาร") ||
+      label.contains("ตลาด") ||
+      label.contains("ช้อป")) {
+    return const Color(0xFF54BFA9);
+  }
+  if (label.contains("พักผ่อน") ||
+      label.contains("สปา") ||
+      label.contains("สุขภาพ")) {
+    return const Color(0xFF72A94B);
+  }
+  if (label.contains("ถ่ายรูป") ||
+      label.contains("กิจกรรม") ||
+      label.contains("ธีมปาร์ค")) {
+    return const Color(0xFFD76FA2);
+  }
+  return const Color(0xFF4A8FBD);
 }
 
 class _DetailSection extends StatelessWidget {
@@ -384,7 +536,11 @@ class _DetailSection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+          style: const TextStyle(
+            color: _detailPrimaryDark,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+          ),
         ),
         const SizedBox(height: 16),
         child,
@@ -496,8 +652,8 @@ class _YouTubeSectionState extends State<_YouTubeSection> {
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF710078)
-                        : const Color(0xFFD8CDD9),
+                        ? _detailPrimary
+                        : const Color(0xFFEAF7FF),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 );
@@ -527,7 +683,7 @@ class _VideoNavButton extends StatelessWidget {
         onPressed: onTap,
         icon: Icon(icon, size: 20),
         style: IconButton.styleFrom(
-          backgroundColor: const Color(0xFF710078),
+          backgroundColor: _detailPrimary,
           foregroundColor: Colors.white,
           padding: EdgeInsets.zero,
         ),
@@ -790,38 +946,12 @@ class _PlaceImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (imagePath.isEmpty) {
-      return PlaceImagePlaceholder(
-        placeName: placeName,
-        height: height,
-        width: width,
-      );
-    }
-
-    if (imagePath.startsWith('http')) {
-      return Image.network(
-        imagePath,
-        height: height,
-        width: width,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            onLoadError?.call();
-          });
-          return PlaceImagePlaceholder(
-            placeName: placeName,
-            height: height,
-            width: width,
-          );
-        },
-      );
-    }
-
-    return Image.asset(
-      imagePath,
+    return ResolvedPlaceImage(
+      imagePath: imagePath,
+      placeName: placeName,
       height: height,
       width: width,
-      fit: BoxFit.cover,
+      onLoadError: onLoadError,
     );
   }
 }

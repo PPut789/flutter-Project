@@ -1,0 +1,217 @@
+{
+  "summary": {
+    "input": "dataset\\attractions.json",
+    "checkedPlaces": 10,
+    "placesWithDuplicates": 10,
+    "originalImages": 20,
+    "uniqueImages": 10,
+    "duplicateImages": 10,
+    "failedImages": 0,
+    "applyDataset": false,
+    "applyFirestore": false,
+    "firestoreUpdated": 0,
+    "firestoreFailed": 0
+  },
+  "places": [
+    {
+      "row": 2,
+      "documentId": "att_0002_20250620152047000",
+      "id": "20250620152047000",
+      "nameTh": "ชุมชนเกาะยาวน้อย",
+      "region": "ภาคใต้",
+      "province": "พังงา",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0002_20250620152047000%2Fphoto_01.jpg?alt=media&token=c1a50c1b-0966-451c-a390-cc551f38a7b0"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0002_20250620152047000%2Fphoto_02.jpg?alt=media&token=ed036c70-b247-4adf-866e-1273e12100db"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 3,
+      "documentId": "att_0003_20250620151429000",
+      "id": "20250620151429000",
+      "nameTh": "เล็ทส์ รีแลกซ์ โบ้ท ลากูน ภูเก็ต",
+      "region": "ภาคใต้",
+      "province": "ภูเก็ต",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0003_20250620151429000%2Fphoto_01.jpg?alt=media&token=5c4ed01e-1e56-4f57-a503-3da443f36e59"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0003_20250620151429000%2Fphoto_02.jpg?alt=media&token=a8b3078a-cc8f-49b9-a7b2-a74ca8568b10"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 4,
+      "documentId": "att_0004_20250620151413000",
+      "id": "20250620151413000",
+      "nameTh": "น้ำพุร้อนเค็มคลองท่อม",
+      "region": "ภาคใต้",
+      "province": "กระบี่",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0004_20250620151413000%2Fphoto_01.jpg?alt=media&token=106577bb-a4b8-4246-88b5-6b3ddaf5ca27"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0004_20250620151413000%2Fphoto_02.jpg?alt=media&token=37e4bc24-02f8-4870-a9a6-700ca35ee940"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 5,
+      "documentId": "att_0005_20250620145704000",
+      "id": "20250620145704000",
+      "nameTh": "หมู่บ้านแม่กำปอง",
+      "region": "ภาคเหนือ",
+      "province": "เชียงใหม่",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0005_20250620145704000%2Fphoto_01.jpg?alt=media&token=e75227bb-7aec-4bca-8bf1-97a3df779a49"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0005_20250620145704000%2Fphoto_02.jpg?alt=media&token=5748ea02-1766-4f16-b726-741cca601f79"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 6,
+      "documentId": "att_0006_20250620144750000",
+      "id": "20250620144750000",
+      "nameTh": "เวียงภูเพียงแช่แห้ง",
+      "region": "ภาคเหนือ",
+      "province": "น่าน",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0006_20250620144750000%2Fphoto_01.jpg?alt=media&token=a4b60805-f762-4e07-b599-56f4039397b4"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0006_20250620144750000%2Fphoto_02.jpg?alt=media&token=1d674e97-3f0f-4608-a843-9ab359830326"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 7,
+      "documentId": "att_0007_20250620140701000",
+      "id": "20250620140701000",
+      "nameTh": "วิสาหกิจชุมชนท่องเที่ยวชุมชนตำบลม่วงกลวง",
+      "region": "ภาคใต้",
+      "province": "ระนอง",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0007_20250620140701000%2Fphoto_01.jpg?alt=media&token=51858d02-2772-4f99-9b13-dc444a8faee7"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0007_20250620140701000%2Fphoto_02.jpg?alt=media&token=d10ae8ef-8adf-48f8-8074-0bac03938aad"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 8,
+      "documentId": "att_0008_20250620131238000",
+      "id": "20250620131238000",
+      "nameTh": "ถ้ำเล สเตโกดอน",
+      "region": "ภาคใต้",
+      "province": "สตูล",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0008_20250620131238000%2Fphoto_01.jpg?alt=media&token=4d051129-0d35-41c6-ab1c-9d342cd92485"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0008_20250620131238000%2Fphoto_02.jpg?alt=media&token=208a8677-ce09-44c2-9192-488e31a17836"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 9,
+      "documentId": "att_0009_20250620120308000",
+      "id": "20250620120308000",
+      "nameTh": "ชุมชนท่องเที่ยวบ้านมุงเหนือ",
+      "region": "ภาคเหนือ",
+      "province": "พิษณุโลก",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0009_20250620120308000%2Fphoto_01.jpg?alt=media&token=d52ff7e3-52cf-48a6-a83c-7e9ef6818a3e"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0009_20250620120308000%2Fphoto_02.jpg?alt=media&token=f24229fe-91db-4bb8-b2c8-0bc1c95dc9a4"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 10,
+      "documentId": "att_0010_20250619102824000",
+      "id": "20250619102824000",
+      "nameTh": "เรด เมาท์เทิน กอล์ฟ คลับ",
+      "region": "ภาคใต้",
+      "province": "ภูเก็ต",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0010_20250619102824000%2Fphoto_01.jpg?alt=media&token=a6d132fb-159b-4817-b44d-8bd86a595a6c"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0010_20250619102824000%2Fphoto_02.jpg?alt=media&token=05d7c5c5-43c1-48ea-8ef1-b5a1e5455165"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    },
+    {
+      "row": 11,
+      "documentId": "att_0011_20250619095339000",
+      "id": "20250619095339000",
+      "nameTh": "อุทยานแห่งชาติธารโบกขรณี",
+      "region": "ภาคใต้",
+      "province": "กระบี่",
+      "originalImageCount": 2,
+      "uniqueImageCount": 1,
+      "duplicateImageCount": 1,
+      "failedImageCount": 0,
+      "keptUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0011_20250619095339000%2Fphoto_01.jpg?alt=media&token=fac11ce0-88e7-457f-bff5-2717c6d0acbc"
+      ],
+      "duplicateUrls": [
+        "https://firebasestorage.googleapis.com/v0/b/travelrecommendation-851e9.firebasestorage.app/o/attraction_images%2Fatt_0011_20250619095339000%2Fphoto_02.jpg?alt=media&token=f47bfeb7-4202-47e2-a5aa-b7b567f06c80"
+      ],
+      "failedUrls": [],
+      "firestoreStatus": "not_requested"
+    }
+  ]
+}

@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/app_routes.dart';
-import '../widgets/app_chrome.dart';
 import 'location_page.dart';
 import 'login_page.dart';
 
@@ -102,64 +101,68 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFEAF5FB),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(28, 58, 28, 28),
-          child: _RegisterCard(
-            children: [
-              _RegisterField(
-                controller: usernameController,
-                label: "ชื่อผู้ใช้",
-                hint: "กรอกชื่อผู้ใช้งาน",
-                icon: Icons.person,
-              ),
-              const SizedBox(height: 12),
-              _RegisterField(
-                controller: emailController,
-                label: "อีเมล",
-                hint: "กรอกอีเมลของคุณ",
-                icon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-              _RegisterField(
-                controller: passwordController,
-                label: "รหัสผ่าน",
-                hint: "กรอกรหัสผ่านของคุณ",
-                icon: Icons.lock,
-                obscureText: true,
-              ),
-              const SizedBox(height: 12),
-              _RegisterField(
-                controller: confirmPasswordController,
-                label: "ยืนยันรหัสผ่าน",
-                hint: "กรอกรหัสผ่านอีกครั้ง",
-                icon: Icons.lock_outline,
-                obscureText: true,
-              ),
-              if (errorMessage.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                _AuthErrorText(message: errorMessage),
-              ],
-              const SizedBox(height: 28),
-              PrimaryActionButton(
-                label: "สมัครสมาชิก",
-                isLoading: isLoading,
-                onPressed: _signUp,
-              ),
-              const SizedBox(height: 18),
-              _AuthSwitchLink(
-                text: "มีบัญชีอยู่แล้ว?",
-                actionText: "เข้าสู่ระบบ",
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    smoothRoute(const LoginPage()),
-                  );
-                },
-              ),
-            ],
+        child: ColoredBox(
+          color: const Color(0xFFEAF5FB),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(30, 18, 30, 22),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 34,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _RegisterCard(
+                          isLoading: isLoading,
+                          onSubmit: _signUp,
+                          children: [
+                            _RegisterField(
+                              controller: usernameController,
+                              label: "ชื่อผู้ใช้",
+                              hint: "กรอกชื่อผู้ใช้งาน",
+                              icon: Icons.person_outline_rounded,
+                            ),
+                            const SizedBox(height: 12),
+                            _RegisterField(
+                              controller: emailController,
+                              label: "อีเมล",
+                              hint: "กรอกอีเมลของคุณ",
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            const SizedBox(height: 12),
+                            _RegisterField(
+                              controller: passwordController,
+                              label: "รหัสผ่าน",
+                              hint: "กรอกรหัสผ่านของคุณ",
+                              icon: Icons.lock_outline_rounded,
+                              obscureText: true,
+                            ),
+                            const SizedBox(height: 12),
+                            _RegisterField(
+                              controller: confirmPasswordController,
+                              label: "ยืนยันรหัสผ่าน",
+                              hint: "กรอกรหัสผ่านอีกครั้ง",
+                              icon: Icons.lock_outline_rounded,
+                              obscureText: true,
+                            ),
+                            if (errorMessage.isNotEmpty) ...[
+                              const SizedBox(height: 14),
+                              _AuthErrorText(message: errorMessage),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -169,8 +172,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
 class _RegisterCard extends StatelessWidget {
   final List<Widget> children;
+  final bool isLoading;
+  final VoidCallback onSubmit;
 
-  const _RegisterCard({required this.children});
+  const _RegisterCard({
+    required this.children,
+    required this.isLoading,
+    required this.onSubmit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -180,22 +189,81 @@ class _RegisterCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            "สร้างบัญชี",
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 25,
-              fontWeight: FontWeight.w900,
+          Center(
+            child: Image.asset(
+              'assets/logos/register_brand_header_transparent.png',
+              width: 238,
+              height: 170,
+              fit: BoxFit.contain,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           const Text(
-            "กรอกข้อมูลเพื่อสมัครสมาชิก",
-            style: TextStyle(color: appTextMuted),
+            "สมัครสมาชิกเพื่อเริ่มต้นเดินทาง",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFF7A93A7),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
           ...children,
+          const SizedBox(height: 22),
+          _RegisterSubmitButton(isLoading: isLoading, onPressed: onSubmit),
+          const SizedBox(height: 20),
+          _AuthSwitchLink(
+            text: "มีบัญชีอยู่แล้ว?",
+            actionText: "เข้าสู่ระบบ",
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                smoothRoute(const LoginPage()),
+              );
+            },
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _RegisterSubmitButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  const _RegisterSubmitButton({
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: FilledButton(
+        onPressed: isLoading ? null : onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF76ADD1),
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: const Color(0xFFEAF7FF),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          elevation: 0,
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text('สมัครสมาชิก'),
       ),
     );
   }
@@ -230,15 +298,31 @@ class _RegisterFieldState extends State<_RegisterField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: const TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 4),
+        Text(
+          widget.label,
+          style: const TextStyle(
+            color: Color(0xFF3A6384),
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 8),
         TextField(
           controller: widget.controller,
           keyboardType: widget.keyboardType,
           obscureText: isObscured,
           decoration: InputDecoration(
             hintText: widget.hint,
-            hintStyle: const TextStyle(fontSize: 14, color: Colors.black38),
+            hintStyle: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF9AAEC0),
+              fontWeight: FontWeight.w600,
+            ),
+            prefixIcon: Icon(
+              widget.icon,
+              size: 21,
+              color: const Color(0xFF6D8396),
+            ),
             suffixIcon: widget.obscureText
                 ? IconButton(
                     onPressed: () {
@@ -250,23 +334,28 @@ class _RegisterFieldState extends State<_RegisterField> {
                       isObscured
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      size: 18,
+                      color: const Color(0xFF6D8396),
+                      size: 20,
                     ),
                   )
                 : null,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Colors.white.withValues(alpha: 0.82),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+              horizontal: 18,
+              vertical: 16,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: appBorder),
+              borderRadius: BorderRadius.circular(999),
+              borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: appBorder),
+              borderRadius: BorderRadius.circular(999),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(999),
+              borderSide: const BorderSide(color: Color(0xFF7AAED3), width: 1),
             ),
           ),
         ),
@@ -309,7 +398,7 @@ class _AuthSwitchLink extends StatelessWidget {
         Flexible(
           child: Text(
             "$text ",
-            style: const TextStyle(color: Colors.grey),
+            style: const TextStyle(color: Color(0xFF8A9EAF)),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -318,8 +407,8 @@ class _AuthSwitchLink extends StatelessWidget {
           child: Text(
             actionText,
             style: const TextStyle(
-              color: appPurple,
-              fontWeight: FontWeight.w700,
+              color: Color(0xFF4A8FBD),
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),

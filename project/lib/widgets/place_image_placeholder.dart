@@ -41,7 +41,7 @@ class PlaceImagePlaceholder extends StatelessWidget {
         children: [
           Icon(
             Icons.landscape_outlined,
-            color: const Color(0xFF710078),
+            color: const Color(0xFF7EC8E3),
             size: isCompact ? 22 : 34,
           ),
           SizedBox(height: isCompact ? 3 : 8),
@@ -51,7 +51,7 @@ class PlaceImagePlaceholder extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: const Color(0xFF3B214A),
+              color: const Color(0xFF2F5872),
               fontSize: isCompact ? 8 : 13,
               fontWeight: FontWeight.w800,
             ),
